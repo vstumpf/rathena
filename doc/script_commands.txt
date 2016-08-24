@@ -3,7 +3,7 @@
 //===== By: ==================================================
 //= rAthena Dev Team
 //===== Last Updated: ========================================
-//= 20160523
+//= 20160824
 //===== Description: =========================================
 //= A reference manual for the rAthena scripting language.
 //= Commands are sorted depending on their functionality.
@@ -28,8 +28,9 @@ better than yelling around the forum for help.
 
 A little learning never caused anyone's head to explode.
 
-Structure
----------
+--------------
+//-- Structure
+--------------
 
 The commands and functions are listed in no particular order:
 
@@ -46,8 +47,9 @@ name, and it should find the command description for you.
 
 If you find anything omitted, please respond. :)
 
-Syntax
-------
+-----------
+//-- Syntax
+-----------
 
 Throughout this document, wherever a command wants an argument, it is given in 
 <angle brackets>. This doesn't mean you should type the angle brackets. :) If an 
@@ -69,9 +71,9 @@ idea.
 Wherever you refer to a map name, it's always 'map name' or 'map name.gat'
 (although the .gat suffix is deprecated). 
 
-
-Script loading structure
-------------------------
+-----------------------------
+//-- Script loading structure
+-----------------------------
 
 Scripts are loaded by the map server as referenced in the 'conf/map_athena.conf' 
 configuration file, but in the default configuration, it doesn't load any script 
@@ -127,7 +129,9 @@ this language, but we're stuck with it for now. :)
 
 Here is a list of valid top-level commands:
 
+------------------
 ** Set a map flag:
+------------------
 
 <map name>%TAB%mapflag%TAB%<flag>
 
@@ -137,7 +141,9 @@ server's up, all the maps have the flags they should have. Map flags determine
 the behavior of the map in various situations. For more details, see 'setmapflag'
 and 'doc/mapflags.txt'.
 
+------------------------------------
 ** Create a permanent monster spawn:
+------------------------------------
 
 <map name>,<x>,<y>,<xs>,<ys>%TAB%monster%TAB%<monster name>%TAB%<mob id>,<amount>,<delay1>,<delay2>,<event>{,<mob size>,<mob ai>}
 
@@ -200,7 +206,9 @@ ex: if your NPC is named 'Hunter#hunter1', it will be displayed as 'Hunter'
 <Display name> must be at most 24 characters in length.
 <Unique name> must be at most 24 characters in length.
 
+----------------------
 ** Define a warp point
+----------------------
 
 <from mapname>,<fromX>,<fromY>,<facing>%TAB%warp%TAB%<warp name>%TAB%<spanx>,<spany>,<to mapname>,<toX>,<toY>
 
@@ -218,7 +226,9 @@ with 'enablenpc'/'disablenpc'
 Facing of a warp object is irrelevant, it is not used in the code and all 
 current scripts have a zero in there.
 
+------------------------
 ** Define an NPC object.
+------------------------
 
 <map name>,<x>,<y>,<facing>%TAB%script%TAB%<NPC Name>%TAB%<sprite id>,{<code>}
 <map name>,<x>,<y>,<facing>%TAB%script%TAB%<NPC Name>%TAB%<sprite id>,<triggerX>,<triggerY>,{<code>}
@@ -259,7 +269,9 @@ triggered. It may contain commands and function calls, descriptions of which
 compose most of this document. It has to be in curly brackets, unlike elsewhere 
 where we use curly brackets, these do NOT signify an optional parameter.
 
+----------------------------------
 ** Define a 'floating' NPC object.
+----------------------------------
 
 -%TAB%script%TAB%<NPC Name>%TAB%-1,{<code>}
 
@@ -268,7 +280,9 @@ normally mean it's pointless since it can't do anything, but there are
 exceptions, mostly related to running scripts at specified time, which is what 
 these floating NPC objects are for. More on that below.
 
-** Define a shop/cashshop/itemshop/pointshop NPC.
+---------------------
+** Define a shop NPC.
+---------------------
 
 -%TAB%shop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}
 <map name>,<x>,<y>,<facing>%TAB%shop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}
@@ -276,11 +290,23 @@ these floating NPC objects are for. More on that below.
 -%TAB%cashshop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}
 <map name>,<x>,<y>,<facing>%TAB%cashshop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}
 
+--------------------------
+** Define an itemshop NPC.
+--------------------------
+
 -%TAB%itemshop%TAB%<NPC Name>%TAB%<sprite id>,<costitemid>{:<discount>},<itemid>:<price>{,<itemid>:<price>...}
 <map name>,<x>,<y>,<facing>%TAB%itemshop%TAB%<NPC Name>%TAB%<sprite id>,<costitemid>{:<discount>},<itemid>:<price>{,<itemid>:<price>...}
 
+--------------------------
+** Define a pointshop NPC.
+--------------------------
+
 -%TAB%pointshop%TAB%<NPC Name>%TAB%<sprite id>,<costvariable>{:<discount>},<itemid>:<price>{,<itemid>:<price>...}
 <map name>,<x>,<y>,<facing>%TAB%pointshop%TAB%<NPC Name>%TAB%<sprite id>,<costvariable>{:<discount>},<itemid>:<price>{,<itemid>:<price>...}
+
+---------------------------
+** Define a marketshop NPC.
+---------------------------
 
 <map name>,<x>,<y>,<facing>%TAB%marketshop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>:<quantity>{,<itemid>:<price>:<quantity>...}
 
@@ -310,13 +336,24 @@ local account variables, or permanent global account variables. These variables
 must be of integer type, not string. 'discount' flag is an option, makes the price
 at that shop is affected by discount skill.
 
-** Define an warp/shop/cashshop/itemshop/pointshop/NPC duplicate.
+---------------------------
+** Define an NPC duplicate.
+---------------------------
 
-warp: <map name>,<x>,<y>,<facing>%TAB%duplicate(<label>)%TAB%<NPC Name>%TAB%<spanx>,<spany>
-shop/cashshop/itemshop/pointshop/npc: -%TAB%duplicate(<label>)%TAB%<NPC Name>%TAB%<sprite id>
-shop/cashshop/itemshop/pointshop/npc: <map name>,<x>,<y>,<facing>%TAB%duplicate(<label>)%TAB%<NPC Name>%TAB%<sprite id>
-npc: -%TAB%duplicate(<label>)%TAB%<NPC Name>%TAB%<sprite id>,<triggerX>,<triggerY>
-npc: <map name>,<x>,<y>,<facing>%TAB%duplicate(<label>)%TAB%<NPC Name>%TAB%<sprite id>,<triggerX>,<triggerY>
+warp:
+-----
+<map name>,<x>,<y>,<facing>%TAB%duplicate(<label>)%TAB%<NPC Name>%TAB%<spanx>,<spany>
+
+shop/cashshop/itemshop/pointshop/NPC:
+-------------------------------------
+
+-%TAB%duplicate(<label>)%TAB%<NPC Name>%TAB%<sprite id>
+<map name>,<x>,<y>,<facing>%TAB%duplicate(<label>)%TAB%<NPC Name>%TAB%<sprite id>
+
+npc:
+----
+-%TAB%duplicate(<label>)%TAB%<NPC Name>%TAB%<sprite id>,<triggerX>,<triggerY>
+<map name>,<x>,<y>,<facing>%TAB%duplicate(<label>)%TAB%<NPC Name>%TAB%<sprite id>,<triggerX>,<triggerY>
 
 This will duplicate an warp/shop/cashshop/itemshop/pointshop/NPC referred to by 'label'.
 Warp duplicates inherit the target location.
@@ -325,7 +362,9 @@ NPC duplicates inherit the script code.
 The rest (name, location, facing, sprite ID, span/trigger area)
 is obtained from the definition of the duplicate (not inherited).
 
-** Define a function object
+----------------------------
+** Define a function object.
+----------------------------
 
 function%TAB%script%TAB%<function name>%TAB%{<code>}
 
@@ -575,7 +614,7 @@ constants such as server defines and status options:
     Option_Dragon5, Option_Hanbok, Option_Oktoberfest, Option_Dragon, Option_Costume
 
 Assigning variables
---------- ---------
+-------------------
 
 As of rAthena revision 15982, variables can be accessed and assigned values directly
 without the use of the built-in 'set' function. This means that variables can be
@@ -654,12 +693,10 @@ Arrays can naturally store strings:
 the '$', normally denoting a string variable, before the square brackets that 
 denotes an array index.
 
-Variable References
--------------------
+Script Constants
+----------------
 
-//##TODO
-
-
+See src/map/script_constants.h for all defined constants.
 
 Operators
 ---------
@@ -859,83 +896,118 @@ OnDay<month><day>:
 This will execute when the server clock hits the specified date or time. Hours 
 and minutes are given in military time. ('0105' will mean 01:05 AM). Weekdays 
 are Sun,Mon,Tue,Wed,Thu,Fri,Sat. Months are 01 to 12, days are 01 to 31. 
-Remember the zero. :)
+Remember the zero.
 
 OnInit:
-OnInterIfInit:
-OnInterIfInitOnce:
+-------
+Will execute every time the scripts loading is complete, including when they are reloaded
+with @reloadscript command. 
 
-OnInit will execute every time the scripts loading is complete, including when 
-they are reloaded with @reloadscript command. OnInterIfInit will execute when 
-the map server connects to a char server, OnInterIfInitOnce will only execute 
-once and will not execute if the map server reconnects to the char server later.
+OnInterIfInit:
+--------------
+
+Will execute when the map server connects to a char server.
+
+OnInterIfInitOnce:
+------------------
+
+Will only execute once and will not execute if the map server reconnects again later.
 
 OnAgitStart:
-OnAgitEnd:
-OnAgitInit:
 OnAgitStart2:
+-------------
+
+Will run whenever the server shifts into WoE mode, whether it is done with @agitstart 
+GM command or with 'AgitStart' script command. 'OnAgitStart2' is for WoE SE
+
+No RID will be attached while when labels are triggered, so no character or account-based 
+variables will be accessible, until you attach a RID with 'attachrid' (see below).
+
+OnAgitEnd:
 OnAgitEnd2:
+-----------
+
+Will run whenever the server shifts out of WoE mode, whether it is done with @agitend
+GM command or with 'AgitEnd' script command. 'OnAgitEnd2' is for WoE SE
+
+No RID will be attached while when labels are triggered, so no character or account-based 
+variables will be accessible, until you attach a RID with 'attachrid' (see below).
+
+OnAgitInit:
 OnAgitInit2:
+------------
 
-OnAgitStart will run whenever the server shifts into WoE mode, whether it is 
-done with @agitstart GM command or with 'AgitStart' script command. OnAgitEnd 
-will do likewise for the end of WoE.
+Will run when data for all castles and all guilds that hold a castle is received by 
+map-server from the char-server after initial connect.  'OnAgitInit2' is for WoE SE
 
-OnAgitInit will run when data for all castles and all guilds that hold a castle 
-is received by map-server from the char-server after initial connect.
-
-No RID will be attached while any of the above mentioned labels are triggered, so 
-no character or account-based variables will be accessible, until you attach a 
-RID with 'attachrid' (see below).
-
-The above also applies to, the last three labels, the only difference is that
-these labels are used exclusively for WoE SE, and are called independently.
+No RID will be attached while when labels are triggered, so no character or account-based 
+variables will be accessible, until you attach a RID with 'attachrid' (see below).
 
 OnInstanceInit:
+---------------
 
 This label will be executed when an instance is created and initialized through
 the 'instance_create' command. It will run again if @reloadscript is used while
 an instance is in progress.
 
 OnTouch:
+--------
 
 This label will be executed if a trigger area is defined for the NPC object it's 
 in. If it isn't present, the execution will start from the beginning of the NPC 
 code. The RID of the triggering character object will be attached.
 
 OnTouch_:
+---------
 
 Similar to OnTouch, but will only run one instance. Another character is
 chosen once the triggering character leaves the area.
 
 OnTouchNPC:
+-----------
 
 Similar to OnTouch, but will only trigger for monsters. For this case, by using
 'getattachedrid' will returns GID (ID that returned when use 'monster').
 
 OnPCLoginEvent:
+---------------
+
+Will trigger when a character logs into map server. The RID of the triggering 
+character object will be attached.
+
 OnPCLogoutEvent:
+----------------
+
+Will trigger just before character logs out of map server. The RID of the 
+triggering character object will be attached.
+
 OnPCBaseLvUpEvent:
 OnPCJobLvUpEvent:
+------------------
 
-It's pretty obvious when these four special labels will be invoked.
+Will trigger when a Character gains a Base/Job Level respectively. The RID of 
+the triggering character object will be attached.
 
 OnPCDieEvent:
+-------------
 
 This special label triggers when a player dies. The variable 'killerrid' is
 set to the ID of the killer.
 
 OnPCKillEvent:
+--------------
 
 This special label triggers when a player kills another player. The variable
 'killedrid' is set to the ID of the player killed.
 
 OnNPCKillEvent:
+---------------
 
 This special label triggers when a player kills a monster. The variable
 'killedrid' is set to the Class (mob ID) of the monster killed.
 
 OnPCLoadMapEvent:
+-----------------
 
 This special label triggers when a player steps in a map marked with the 
 'loadevent' mapflag and attaches its RID. The fact that this label requires a 
@@ -944,6 +1016,7 @@ every time a player would change maps. Imagine the server load with 1,000 player
 (oh the pain...)
 
 OnPCStatCalcEvent:
+------------------
 
 This special label triggers when a player's stats are recalculated, such as when
 changing stats, equipment, or maps, as well as when logging in, leveling up, and
@@ -951,6 +1024,7 @@ mounting a job mount. This can be used to grant additional item bonuses to certa
 player groups, for instance.
 
 OnWhisperGlobal:
+----------------
 
 This special label triggers when a player whispers the NPC, and will run with the
 player's RID attached. It can accept up to ten parameters, which will be stored
@@ -969,6 +1043,7 @@ name to start from. The label name can be any of your liking, but must be
 started with "On".
 
 Example:
+--------
 
 monster "prontera",123,42,"Poringz0rd",2341,23,"Master::OnThisMobDeath";
 
@@ -983,7 +1058,9 @@ OnThisMobDeath:
 
 Each time you kill one, that announce will appear in blue to everyone.
 
+
 "Global" labels
+---------------
 
 There's a catch with labels and doevent. If you call a label (using doevent)
 and called label is in NPC that has trigger area, that label must end with
@@ -1008,28 +1085,36 @@ commands on one line if you properly terminate them with a ';', but it's better
 if you don't, since it is not certain just whether the scripting engine will 
 behave nicely if you do.
 
--------------------------
-
+--------------------------------
 
 From here on, we will have the commands sorted as follow:
 
-1.- Basic commands.
-2.- Information-retrieving commands.
-3.- Checking commands.
-4.- Player-related commands.
-5.- Mob / NPC -related commands.
-6.- Other commands.
-7.- Instance commands.
-8.- Quest Log commands.
-9.- Battleground commands.
-10.- Pet commands.
-10.1.- The Pet AI commands.
-11.- Homunculus commands.
-12.- Mercenary commands.
-13.- Party commands.
+1 - Basic commands.
+2 - Information-retrieving commands.
+2.1 - Item-related commands
+2.2 - Guild-related commands
+3 - Checking commands.
+3.1 - Item-related commands
+4 - Player-related commands.
+4.1 - Item-related commands
+4.2 - Guild-related commands
+4.3 Marriage-related commands
+5 - Mob / NPC -related commands.
+5.1 - Time-related commands
+5.2 - Guild-related commands
+6 - Other commands.
+6.1 - Unit-related commands
+7 - Instance commands.
+8 - Quest Log commands.
+9 - Battleground commands.
+10 - Pet commands.
+10.1 - The Pet AI commands.
+11 - Homunculus commands.
+12 - Mercenary commands.
+13 - Party commands.
 
 =====================
-|1.- Basic commands.|
+|1 - Basic commands.|
 =====================
 ---------------------------------------
 
@@ -2218,7 +2303,7 @@ array, shifting all the elements beyond this towards the beginning.
 ---------------------------------------
 
 ======================================
-|2.- Information-retrieving commands.|
+|2 - Information-retrieving commands.|
 ======================================
 ---------------------------------------
 
@@ -2479,11 +2564,9 @@ Valid flag:
 
 Note: SECURE_NPCTIMEOUT must be enabled for this to work.
 
----------------------------------------
-\\
-2,2 Item-related commands
-\\
----------------------------------------
+\\=======================
+2.1 Item-related commands
+\\=======================
 
 *getequipid(<equipment slot>{,<char_id>})
 
@@ -2876,11 +2959,48 @@ Merge all stackable items that separated by GUID flags
 (either by flag 4 item_flag.txt or GUID  in item_group).
 If no item ID/name given, all possible items in player's inventory will be merged.
 
+
+*getrandomoptinfo(<type>);
+
+Returns value of an attribute of current random option.
+
+Valid attributes are:
+ROA_ID - ID of current option
+ROA_VALUE - Value field of current option
+ROA_PARAM - Param field of current option
+
+This script command is intended for using in random option scripts.
+
 ---------------------------------------
-//
-2,1.- End of item-related commands.
-//
+
+*getequiprandomoption(<equipment index>,<index>,<type>{,<char id>});
+
+Returns value of an attribute of a random option on an equipped item.
+
+See 'getequipid' for a full list of valid equipment slots.
+
+index parameter can be 0 to MAX_ITEM_RDM_OPT-1 (default 0-4).
+
+For valid attribute types, see `getrandomoptinfo` command reference.
+
 ---------------------------------------
+
+*setrandomoption(<equipment slot>,<index>,<id>,<value>,<param>{,<char id>});
+
+Sets <index+1>th random option for equipment equipped at <equipment slot>
+to <id>, <value> and <param>.
+
+See 'getequipid' for a full list of valid equipment slots.
+
+index parameter can be 0 to MAX_ITEM_RDM_OPT-1 (default 0-4).
+
+ID - ID of random option. See db/const.txt for constants.
+Value - Value of random option
+Param - Parameter of random option
+
+//--------------------------------
+2.1 - End of item-related commands
+//--------------------------------
 
 *getmapxy("<variable for map name>",<variable for x>,<variable for y>,<type>{,"<search string>"})
 
@@ -3037,11 +3157,9 @@ within the specified area - an x1/y1-x2/y2 square on the specified map.
 This is useful for maps that are split into many buildings, such as all the 
 "*_in" maps, due to all the shops and houses.
 
----------------------------------------
-\\
-2,2.- Guild-related commands
-\\
----------------------------------------
+\\==========================
+2.2 - Guild-related commands
+\\==========================
 
 *getguildname(<guild id>)
 
@@ -3196,11 +3314,9 @@ Example:
 
 mes "You have "+getMapGuildUsers("prontera",getcharid(2))+" guild members in Prontera.";
 
----------------------------------------
-//
-2,2.- End of guild-related commands
-//
----------------------------------------
+//---------------------------------
+2.2 - End of guild-related commands
+//---------------------------------
 
 *getskilllv(<skill id>)
 *getskilllv("<skill name>")
@@ -3373,9 +3489,9 @@ You can see the full list of available effect types you can possibly inflict in
 ---------------------------------------
 
 ========================
-|3.- Checking commands.|
+|3 - Checking commands.|
 ========================
--------------------------
+---------------------------------------
 
 *playerattached()
 
@@ -3709,11 +3825,9 @@ Available types are:
  0 - version number (packet_db_ver)
  1 - client date (YYYYMMDD)
 
----------------------------------------
-\\
-3,1.- Item-related commands
-\\
----------------------------------------
+\\-------------------------
+3.1 - Item-related commands
+\\-------------------------
 
 *isequipped(<id>{,<id>{,<id>{,<id>}}})
 
@@ -3752,13 +3866,21 @@ inserted into any equipment they have in their inventory, currently equipped or
 not.
 
 ---------------------------------------
-//
-3,1.- End of item-related commands
-//
----------------------------------------
+
+*hateffect(<Hat Effect ID>,<State>);
+
+This will set a Hat Effect onto the player. The state field allows you to
+enable (true) or disable (false) the effect on the player.
+The Hat Effect constants can be found in db/const.txt starting with HAT_EF_*.
+
+Requires client 2015-05-13aRagEXE or newer. 
+
+//--------------------------------
+3.1 - End of item-related commands
+//--------------------------------
 
 ==============================
-|4.- Player-related commands.|
+|4 - Player-related commands.|
 ==============================
 -------------------------
 
@@ -4309,12 +4431,56 @@ running on.
 This command will return the Git Hash that the server is currently running on.
 
 	mes "Welcome to rAthena! Git Hash: " + get_githash();
+*opendressroom(<flag>{,<char_id>});
+
+This will open the Dress Room window on the client connected to the invoking character.
+
+    mes "Close this window to open the Dress Room window.";
+    close2;
+    opendressroom(1);
+    end;
+
+Valid flag are:
+ 1 - Open the Dress Room window
 
 ---------------------------------------
-\\
-4,1.- Item-related commands
-\\
+
+*navigateto("<map>"{,<x>,<y>,<flag>,<hide_window>,<monster_id>,<char_id>});
+
+Generates a navigation for attached or specified character. Requires client
+2011-10-10aRagEXE or newer.
+
+The flag specifies how the client will calculate the specific route.
+
+Valid flags are:
+ NAV_NONE - No services
+ NAV_AIRSHIP_ONLY - Airship only
+ NAV_SCROLL_ONLY - Scroll only
+ NAV_AIRSHIP_AND_SCROLL - Airship and Scroll
+ NAV_KAFRA_ONLY - Kafra only
+ NAV_KAFRA_AND_AIRSHIP - Kafra and Airship
+ NAV_KAFRA_AND_SCROLL - Kafra and Scroll
+ NAV_ALL - All services
+
+When flag is not specified, the default value is NAV_KAFRA_AND_AIRSHIP.
+
+The hide_window specifies whether to display (0) or hide (1) the navigation window.
+By default the window is hidden.
+
+You can specify the monster_id in combination with a mapname to make the
+navigation system tell you, that you have reached the desired mob.
+
+Note:
+The client requires custom monster spawns be in the navigation file
+for using the embedded client Navigation feature to work properly. In this
+instance sending the player to the map where the monster spawns is a simpler
+solution rather than sending the map and the monster_id.
+
 ---------------------------------------
+
+\\=========================
+4.1 - Item-related commands
+\\=========================
 
 *getitem <item id>,<amount>{,<account ID>};
 *getitem "<item name>",<amount>{,<account ID>};
@@ -4993,11 +5159,10 @@ These commands toggle the ability to use atcommand while interacting with an NPC
 
 The default setting, 'atcommand_enable_npc', is defined in 'conf/battle/gm.conf'.
 
----------------------------------------
-//
-4,1.- End of item-related commands
-//
----------------------------------------
+
+//--------------------------------
+4.1 - End of item-related commands
+//--------------------------------
 
 *openstorage;
 
@@ -5037,11 +5202,9 @@ This will open the Auction window on the client connected to the invoking charac
     openauction;
     end;
 
----------------------------------------
-\\
-4,2.- Guild-related commands
-\\
----------------------------------------
+\\==========================
+4.2 - Guild-related commands
+\\==========================
 
 *guildopenstorage()
 
@@ -5095,11 +5258,10 @@ enough that all the guild needs to help or something. Doing this for the Glory
 of the Guild skill, which allows your guild to use an emblem, is a good idea for 
 a fun quest. (Wasting a level point on that is really annoying :D)
 
----------------------------------------
-//
-4,2 End of guild-related commands.
-//
----------------------------------------
+
+//-------------------------------
+4.2 End of guild-related commands
+//-------------------------------
 
 *resetlvl <action type>{,<char_id>};
 
@@ -5524,11 +5686,9 @@ Can only be removed when you die or the duration ends.
 'active_transform' twice will not stack (it will cancel the previous bonus for the new).
 'active_transform' will take priority over transform for its duration.
 
----------------------------------------
-\\
-4,3 Marriage-related commands
-\\
----------------------------------------
+\\===========================
+4.3 Marriage-related commands
+\\===========================
 
 *marriage("<spouse name>");
 
@@ -5581,11 +5741,10 @@ Return values:
  ADOPT_LEVEL_70 - Parents need to be at least level 70 in order to adopt someone. (client message)
  ADOPT_MARRIED - You cannot adopt a married person. (client message)
 
----------------------------------------
-//
-4,3.- End of marriage-related commands
-//
----------------------------------------
+
+//------------------------------------
+4.3 - End of marriage-related commands
+//------------------------------------
 
 *pcfollow <id>,<target id>;
 *pcstopfollow <id>;
@@ -5620,7 +5779,7 @@ Examples:
 --------------------------------------- 
 
 ==================================
-|5.- Mob / NPC -related commands.|
+|5 - Mob / NPC -related commands.|
 ==================================
 ---------------------------------------
 
@@ -5997,11 +6156,9 @@ Changes the display name and/or display class of the target NPC.
 Returns 0 is successful, 1 if the NPC does not exist.
 Size is 0 = normal 1 = small 2 = big.
 
----------------------------------------
-\\
-5,1.- Time-related commands
-\\
----------------------------------------
+\\=========================
+5.1 - Time-related commands
+\\=========================
 
 *addtimer <ticks>,"NPC::OnLabel";
 *deltimer "NPC::OnLabel";
@@ -6184,11 +6341,9 @@ character moves while the progress bar progresses, it is aborted and
 the script ends. The color format is in RGB (0xRRGGBB). The color is
 currently ignored by the client and appears always green.
 
----------------------------------------
-//
-5,1.- End of time-related commands
-//
----------------------------------------
+//--------------------------------
+5.1 - End of time-related commands
+//--------------------------------
 
 *announce "<text>",<flag>{,<fontColor>{,<fontType>{,<fontSize>{,<fontAlign>{,<fontY>}}}}};
 
@@ -6631,11 +6786,9 @@ Example:
 // Will warp all members of guild with ID 63 on map prontera to map alberta.
 	mapwarp "prontera","alberta",150,150,1,63;
 
----------------------------------------
-\\
-5,2.- Guild-related commands
-\\
----------------------------------------
+\\==========================
+5.2 - Guild-related commands
+\\==========================
 
 *maprespawnguildid "<map name>",<guild id>,<flag>;
 
@@ -6724,11 +6877,9 @@ Type indicates what information to return:
  1 - max. hp
  2 - current hp
 
----------------------------------------
-//
-5,2.- End of guild-related commands
-//
----------------------------------------
+//---------------------------------
+5.2 - End of guild-related commands
+//---------------------------------
 
 *npcspeed <speed value>;
 *npcwalkto <x>,<y>;
@@ -6777,7 +6928,7 @@ Example:
 ---------------------------------------
 
 =====================
-|6.- Other commands.|
+|6 - Other commands.|
 =====================
 ---------------------------------------
 
@@ -7050,11 +7201,9 @@ and attempt to execute a source-defined command.
 The three .@atcmd_***** variables will NOT be set when invoking script-bound atcommands
 in this way.
 
----------------------------------------
-\\
-6,1.- Unit-related commands
-\\
----------------------------------------
+\\=========================
+6.1 - Unit-related commands
+\\=========================
 
 *unitwalk <GID>,<x>,<y>{,"<event label>"};
 *unitwalkto <GID>,<Target GID>{,"<event label>"};
@@ -7521,11 +7670,9 @@ Valid types are:
    0: Elemental ID
    1: Elemental Game ID
 
----------------------------------------
-\\
-6,1.- End of unit-related commands
-\\
----------------------------------------
+\\--------------------------------
+6.1 - End of unit-related commands
+\\--------------------------------
 
 *npcskill <skill id>,<skill lvl>,<stat point>,<NPC level>;
 *npcskill "<skill name>",<skill lvl>,<stat point>,<NPC level>;
@@ -8125,7 +8272,7 @@ This command will open a book item at the specified page.
 ---------------------------------------
 
 ========================
-|7.- Instance commands.|
+|7 - Instance commands.|
 ========================
 ---------------------------------------
 
@@ -8271,7 +8418,7 @@ if (instance_check_guild(getcharid(2),2,2,149)) {
 ---------------------------------------
 
 =========================
-|8.- Quest Log commands.|
+|8 - Quest Log commands.|
 =========================
 ---------------------------------------
 
@@ -8435,7 +8582,7 @@ Mark Color:
 ---------------------------------------
 
 ============================
-|9.- Battleground commands.|
+|9 - Battleground commands.|
 ============================
 ---------------------------------------
 
@@ -8578,7 +8725,7 @@ mapflag	<map name>	battleground	2
 ---------------------------------------
 
 ====================
-|10.- Pet commands.|
+|10 - Pet commands.|
 ====================
 ---------------------------------------
 
@@ -8637,7 +8784,7 @@ currently has active. Valid types are:
 ---------------------------------------
 
 =============================
-|10.1.- The Pet AI commands.|
+// 10.1 - The Pet AI commands
 =============================
 ---------------------------------------
 
@@ -8730,7 +8877,7 @@ Value of 'rate' is between 1 and 100. 100 = 100%
 ---------------------------------------
 
 ===========================
-|11.- Homunculus commands.|
+|11 - Homunculus commands.|
 ===========================
 ---------------------------------------
 
@@ -8814,7 +8961,7 @@ current invoking character.
 ---------------------------------------
 
 ==========================
-|12.- Mercenary commands.|
+|12 - Mercenary commands.|
 ==========================
 ---------------------------------------
 
@@ -8888,7 +9035,7 @@ for name and 0 for all other types.
 ---------------------------------------
 
 ======================
-|13.- Party commands.|
+|13 - Party commands.|
 ======================
 ---------------------------------------
 
@@ -9116,102 +9263,6 @@ The command returns 1 upon success, and these values upon failure:
 
 ---------------------------------------
 
-*opendressroom(<flag>{,<char_id>});
-
-This will open the Dress Room window on the client connected to the invoking character.
-
-    mes "Close this window to open the Dress Room window.";
-    close2;
-    opendressroom(1);
-    end;
-
-Valid flag are:
- 1 - Open the Dress Room window
-
----------------------------------------
-
-*navigateto("<map>"{,<x>,<y>,<flag>,<hide_window>,<monster_id>,<char_id>});
-
-Generates a navigation for attached or specified character. Requires client
-2011-10-10aRagEXE or newer.
-
-The flag specifies how the client will calculate the specific route.
-
-Valid flags are:
- NAV_NONE - No services
- NAV_AIRSHIP_ONLY - Airship only
- NAV_SCROLL_ONLY - Scroll only
- NAV_AIRSHIP_AND_SCROLL - Airship and Scroll
- NAV_KAFRA_ONLY - Kafra only
- NAV_KAFRA_AND_AIRSHIP - Kafra and Airship
- NAV_KAFRA_AND_SCROLL - Kafra and Scroll
- NAV_ALL - All services
-
-When flag is not specified, the default value is NAV_KAFRA_AND_AIRSHIP.
-
-The hide_window specifies whether to display (0) or hide (1) the navigation window.
-By default the window is hidden.
-
-You can specify the monster_id in combination with a mapname to make the
-navigation system tell you, that you have reached the desired mob.
-
-Note:
-The client requires custom monster spawns be in the navigation file
-for using the embedded client Navigation feature to work properly. In this
-instance sending the player to the map where the monster spawns is a simpler
-solution rather than sending the map and the monster_id.
-
----------------------------------------
-
-*hateffect(<Hat Effect ID>,<State>);
-
-This will set a Hat Effect onto the player. The state field allows you to
-enable (true) or disable (false) the effect on the player.
-The Hat Effect constants can be found in db/const.txt starting with HAT_EF_*.
-
-Requires client 2015-05-13aRagEXE or newer. 
-
----------------------------------------
-
-*getrandomoptinfo(<type>);
-
-Returns value of an attribute of current random option.
-
-Valid attributes are:
-ROA_ID - ID of current option
-ROA_VALUE - Value field of current option
-ROA_PARAM - Param field of current option
-
-This script command is intended for using in random option scripts.
-
----------------------------------------
-
-*getequiprandomoption(<equipment index>,<index>,<type>{,<char id>});
-
-Returns value of an attribute of a random option on an equipped item.
-
-See 'getequipid' for a full list of valid equipment slots.
-
-index parameter can be 0 to MAX_ITEM_RDM_OPT-1 (default 0-4).
-
-For valid attribute types, see `getrandomoptinfo` command reference.
-
----------------------------------------
-
-*setrandomoption(<equipment slot>,<index>,<id>,<value>,<param>{,<char id>});
-
-Sets <index+1>th random option for equipment equipped at <equipment slot>
-to <id>, <value> and <param>.
-
-See 'getequipid' for a full list of valid equipment slots.
-
-index parameter can be 0 to MAX_ITEM_RDM_OPT-1 (default 0-4).
-
-ID - ID of random option. See db/const.txt for constants.
-Value - Value of random option
-Param - Parameter of random option
-
----------------------------------------
 
 Whew.
 That's about all of them.
