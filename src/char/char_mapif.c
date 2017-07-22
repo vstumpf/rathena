@@ -453,15 +453,14 @@ void chmapif_charselres(int fd, uint32 aid, uint8 res){
  * @return : 0 not enough data received, 1 success
  */
 int chmapif_parse_authok(int fd){
-	if( RFIFOREST(fd) < 19 )
+	if( RFIFOREST(fd) < 18 )
 		return 0;
 	else{
 		uint32 account_id = RFIFOL(fd,2);
 		uint32 login_id1 = RFIFOL(fd,6);
 		uint32 login_id2 = RFIFOL(fd,10);
 		uint32 ip = RFIFOL(fd,14);
-		int version = RFIFOB(fd,18);
-		RFIFOSKIP(fd,19);
+		RFIFOSKIP(fd,18);
 
 		if( runflag != CHARSERVER_ST_RUNNING ){
 			chmapif_charselres(fd,account_id,0);
@@ -478,7 +477,6 @@ int chmapif_parse_authok(int fd){
 			node->login_id2 = login_id2;
 			//node->sex = 0;
 			node->ip = ntohl(ip);
-			node->version = version; //upd version for mapserv
 			//node->expiration_time = 0; // unlimited/unknown time by default (not display in map-server)
 			//node->gmlevel = 0;
 			idb_put(auth_db, account_id, node);
@@ -1198,9 +1196,11 @@ int chmapif_parse_reqcharban(int fd){
 		//int aid = RFIFOL(fd,2); aid of player who as requested the ban
 		int timediff = RFIFOL(fd,6);
 		const char* name = RFIFOCP(fd,10); // name of the target character
+		char esc_name[NAME_LENGTH*2+1];
 		RFIFOSKIP(fd,10+NAME_LENGTH);
 
-		if( SQL_ERROR == Sql_Query(sql_handle, "SELECT `account_id`,`char_id`,`unban_time` FROM `%s` WHERE `name` = '%s'", schema_config.char_db, name) )
+		Sql_EscapeStringLen(sql_handle, esc_name, name, strnlen(name, NAME_LENGTH));
+		if( SQL_ERROR == Sql_Query(sql_handle, "SELECT `account_id`,`char_id`,`unban_time` FROM `%s` WHERE `name` = '%s'", schema_config.char_db, esc_name) )
 			Sql_ShowDebug(sql_handle);
 		else if( Sql_NumRows(sql_handle) == 0 ){
 			return 1; // 1-player not found
@@ -1263,9 +1263,11 @@ int chmapif_parse_reqcharunban(int fd){
 		return 0;
 	else {
 		const char* name = RFIFOCP(fd,6);
+		char esc_name[NAME_LENGTH*2+1];
 		RFIFOSKIP(fd,6+NAME_LENGTH);
 
-		if( SQL_ERROR == Sql_Query(sql_handle, "UPDATE `%s` SET `unban_time` = '0' WHERE `name` = '%s' LIMIT 1", schema_config.char_db, name) ) {
+		Sql_EscapeStringLen(sql_handle, esc_name, name, strnlen(name, NAME_LENGTH));
+		if( SQL_ERROR == Sql_Query(sql_handle, "UPDATE `%s` SET `unban_time` = '0' WHERE `name` = '%s' LIMIT 1", schema_config.char_db, esc_name) ) {
 			Sql_ShowDebug(sql_handle);
 			return 1;
 		}

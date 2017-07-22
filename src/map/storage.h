@@ -4,6 +4,10 @@
 #ifndef _STORAGE_H_
 #define _STORAGE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //#include "../common/mmo.h"
 struct s_storage;
 struct item;
@@ -29,6 +33,7 @@ void storage_storageadd(struct map_session_data *sd, struct s_storage *stor, int
 void storage_storageget(struct map_session_data *sd, struct s_storage *stor, int index, int amount);
 void storage_storageaddfromcart(struct map_session_data *sd, struct s_storage *stor, int index, int amount);
 void storage_storagegettocart(struct map_session_data *sd, struct s_storage *stor, int index, int amount);
+void storage_storagesave(struct map_session_data *sd);
 void storage_storageclose(struct map_session_data *sd);
 void storage_sortitem(struct item* items, unsigned int size);
 void do_init_storage(void);
@@ -61,5 +66,9 @@ void storage_premiumStorage_close(struct map_session_data *sd);
 void storage_premiumStorage_quit(struct map_session_data *sd);
 
 int compare_item(struct item *a, struct item *b);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _STORAGE_H_ */

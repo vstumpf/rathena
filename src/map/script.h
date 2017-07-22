@@ -4,6 +4,10 @@
 #ifndef _SCRIPT_H_
 #define _SCRIPT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "../common/cbasetypes.h"
 #include "map.h"
 
@@ -693,6 +697,12 @@ enum instance_info_type {
 	IIT_MAP
 };
 
+enum vip_status_type {
+	VIP_STATUS_ACTIVE = 1,
+	VIP_STATUS_EXPIRE,
+	VIP_STATUS_REMAINING
+};
+
 /**
  * used to generate quick script_array entries
  **/
@@ -716,9 +726,11 @@ int conv_num(struct script_state *st,struct script_data *data);
 const char* conv_str(struct script_state *st,struct script_data *data);
 void pop_stack(struct script_state* st, int start, int end);
 int run_script_timer(int tid, unsigned int tick, int id, intptr_t data);
+void script_stop_sleeptimers(int id);
+struct linkdb_node *script_erase_sleepdb(struct linkdb_node *n);
 void run_script_main(struct script_state *st);
 
-void script_stop_instances(struct script_code *code);
+void script_stop_scriptinstances(struct script_code *code);
 void script_free_code(struct script_code* code);
 void script_free_vars(struct DBMap *storage);
 struct script_state* script_alloc_state(struct script_code* rootscript, int pos, int rid, int oid);
@@ -729,13 +741,13 @@ struct DBMap* script_get_userfunc_db(void);
 void script_run_autobonus(const char *autobonus, struct map_session_data *sd, unsigned int pos);
 
 bool script_get_constant(const char* name, int* value);
-void script_set_constant(const char* name, int value, bool isparameter);
+void script_set_constant(const char* name, int value, bool isparameter, bool deprecated);
 void script_hardcoded_constants(void);
 
 void script_cleararray_pc(struct map_session_data* sd, const char* varname, void* value);
 void script_setarray_pc(struct map_session_data* sd, const char* varname, uint32 idx, void* value, int* refcache);
 
-int script_config_read(char *cfgName);
+int script_config_read(const char *cfgName);
 void do_init_script(void);
 void do_final_script(void);
 int add_str(const char* p);
@@ -766,6 +778,10 @@ unsigned int *script_array_cpy_list(struct script_array *sa);
 
 #ifdef BETA_THREAD_TEST
 void queryThread_log(char * entry, int length);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _SCRIPT_H_ */

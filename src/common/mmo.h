@@ -9,27 +9,9 @@
 #include "db.h"
 #include <time.h>
 
-// server->client protocol version
-//        0 - pre-?
-//        1 - ?                    - 0x196
-//        2 - ?                    - 0x78, 0x79
-//        3 - ?                    - 0x1c8, 0x1c9, 0x1de
-//        4 - ?                    - 0x1d7, 0x1d8, 0x1d9, 0x1da
-//        5 - 2003-12-18aSakexe+   - 0x1ee, 0x1ef, 0x1f0, ?0x1c4, 0x1c5?
-//        6 - 2004-03-02aSakexe+   - 0x1f4, 0x1f5
-//        7 - 2005-04-11aSakexe+   - 0x229, 0x22a, 0x22b, 0x22c
-// see conf/battle/client.conf for other version
-
 #ifndef PACKETVER
-	#define PACKETVER 20130807
-	//#define PACKETVER 20120410
+	#error Please define PACKETVER in src/config/packets.h
 #endif
-
-// Check if the specified packetversion supports the pincode system
-#define PACKETVER_SUPPORTS_PINCODE PACKETVER>=20110309
-
-/// Check if the client needs delete_date as remaining time and not the actual delete_date (actually it was tested for clients since 2013)
-#define PACKETVER_CHAR_DELETEDATE (PACKETVER > 20130000 && PACKETVER < 20141016) || PACKETVER >= 20150826
 
 ///Remove/Comment this line to disable sc_data saving. [Skotlex]
 #define ENABLE_SC_SAVING
@@ -101,6 +83,8 @@
 #define PASSWD_LENGTH (32+1)
 //NPC names can be longer than it's displayed on client (NAME_LENGTH).
 #define NPC_NAME_LENGTH 50
+// <NPC_NAME_LENGTH> for npc name + 2 for a "::" + <NAME_LENGTH> for label + 1 for EOS
+#define EVENT_NAME_LENGTH ( NPC_NAME_LENGTH + 2 + NAME_LENGTH + 1 )
 //For item names, which tend to have much longer names.
 #define ITEM_NAME_LENGTH 50
 //For Map Names, which the client considers to be 16 in length including the .gat extension
@@ -135,7 +119,14 @@
 //Mail System
 #define MAIL_MAX_INBOX 30
 #define MAIL_TITLE_LENGTH 40
+#if PACKETVER < 20150513
 #define MAIL_BODY_LENGTH 200
+#define MAIL_MAX_ITEM 1
+#else
+#define MAIL_BODY_LENGTH 500
+#define MAIL_MAX_ITEM 5
+#define MAIL_PAGE_SIZE 7
+#endif
 
 //Mercenary System
 #define MC_SKILLBASE 8201
@@ -183,6 +174,12 @@ struct quest {
 	enum quest_state state;          ///< Current quest state
 };
 
+struct s_item_randomoption {
+	short id;
+	short value;
+	char param;
+};
+
 struct item {
 	int id;
 	unsigned short nameid;
@@ -192,11 +189,7 @@ struct item {
 	char refine;
 	char attribute;
 	unsigned short card[MAX_SLOTS];
-	struct {
-		short id;
-		short value;
-		char param;
-	} option[MAX_ITEM_RDM_OPT];		// max of 5 random options can be supported.
+	struct s_item_randomoption option[MAX_ITEM_RDM_OPT];		// max of 5 random options can be supported.
 	unsigned int expire_time;
 	char favorite, bound;
 	uint64 unique_id;
@@ -349,8 +342,8 @@ struct s_pet {
 	int pet_id;
 	short class_;
 	short level;
-	short egg_id;//pet egg id
-	short equip;//pet equip name_id
+	unsigned short egg_id;//pet egg id
+	unsigned short equip;//pet equip name_id
 	short intimate;//pet friendly
 	short hungry;//pet hungry
 	char name[NAME_LENGTH];
@@ -493,6 +486,19 @@ typedef enum mail_status {
 	MAIL_READ,
 } mail_status;
 
+enum mail_inbox_type {
+	MAIL_INBOX_NORMAL = 0,
+	MAIL_INBOX_ACCOUNT,
+	MAIL_INBOX_RETURNED
+};
+
+enum mail_attachment_type {
+	MAIL_ATT_NONE = 0,
+	MAIL_ATT_ZENY = 1,
+	MAIL_ATT_ITEM = 2,
+	MAIL_ATT_ALL = MAIL_ATT_ZENY | MAIL_ATT_ITEM
+};
+
 struct mail_message {
 	int id;
 	uint32 send_id;                 //hold char_id of sender
@@ -501,12 +507,14 @@ struct mail_message {
 	char dest_name[NAME_LENGTH];    //receiver nickname
 	char title[MAIL_TITLE_LENGTH];
 	char body[MAIL_BODY_LENGTH];
+	int type; // enum mail_inbox_type
+	time_t scheduled_deletion;
 
 	mail_status status;
 	time_t timestamp; // marks when the message was sent
 
 	uint32 zeny;
-	struct item item;
+	struct item item[MAIL_MAX_ITEM];
 };
 
 struct mail_data {
@@ -564,6 +572,7 @@ struct guild_member {
 	char name[NAME_LENGTH];
 	struct map_session_data *sd;
 	unsigned char modified;
+	uint32 last_login;
 };
 
 struct guild_position {
@@ -607,6 +616,7 @@ struct guild {
 	struct guild_skill skill[MAX_GUILDSKILL];
 	struct Channel *channel;
 	unsigned short instance_id;
+	time_t last_leader_change;
 
 	/* Used by char-server to save events for guilds */
 	unsigned short save_flag;
@@ -616,7 +626,7 @@ struct guild_castle {
 	int castle_id;
 	int mapindex;
 	char castle_name[NAME_LENGTH];
-	char castle_event[NAME_LENGTH];
+	char castle_event[EVENT_NAME_LENGTH];
 	int guild_id;
 	int economy;
 	int defense;
@@ -838,6 +848,19 @@ enum e_job {
 
 	JOB_SUMMONER = 4218,
 
+	JOB_BABY_SUMMONER = 4220,
+
+	JOB_BABY_NINJA = 4222,
+	JOB_BABY_KAGEROU,
+	JOB_BABY_OBORO,
+	JOB_BABY_TAEKWON,
+	JOB_BABY_STAR_GLADIATOR,
+	JOB_BABY_SOUL_LINKER,
+	JOB_BABY_GUNSLINGER,
+	JOB_BABY_REBELLION,
+
+	JOB_BABY_STAR_GLADIATOR2 = 4238,
+
 	JOB_MAX,
 };
 
@@ -897,6 +920,7 @@ struct clan{
 	short max_member, connect_member;
 	struct map_session_data *members[MAX_CLAN];
 	struct clan_alliance alliance[MAX_CLANALLIANCE];
+	unsigned short instance_id;
 };
 
 // Sanity checks...

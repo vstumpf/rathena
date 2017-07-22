@@ -4,6 +4,10 @@
 #ifndef _CHAR_SQL_H_
 #define _CHAR_SQL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "../config/core.h"
 #include "../common/core.h" // CORE_ST_LAST
 #include "../common/msg_conf.h"
@@ -58,6 +62,7 @@ struct Schema_Config {
 	char party_db[DB_NAME_LEN];
 	char pet_db[DB_NAME_LEN];
 	char mail_db[DB_NAME_LEN]; // MAIL SYSTEM
+	char mail_attachment_db[DB_NAME_LEN];
 	char auction_db[DB_NAME_LEN]; // Auctions System
 	char friend_db[DB_NAME_LEN];
 	char hotkey_db[DB_NAME_LEN];
@@ -119,6 +124,8 @@ struct Char_Config {
 	int char_name_option; // Option to know which letters/symbols are authorised in the name of a character (0: all, 1: only those in char_name_letters, 2: all EXCEPT those in char_name_letters) by [Yor]
 	int char_del_option;	// Character deletion type, email = 1, birthdate = 2 (default)
 	int char_del_restriction;	// Character deletion restriction (0: none, 1: if the character is in a party, 2: if the character is in a guild, 3: if the character is in a party or a guild)
+	bool char_rename_party;	// Character renaming in a party
+	bool char_rename_guild;	// Character renaming in a guild
 };
 
 #define TRIM_CHARS "\255\xA0\032\t\x0A\x0D " //The following characters are trimmed regardless because they cause confusion and problems on the servers. [Skotlex]
@@ -163,6 +170,10 @@ struct CharServ_Config {
 	char default_map[MAP_NAME_LENGTH];
 	unsigned short default_map_x;
 	unsigned short default_map_y;
+
+	int clan_remove_inactive_days;
+	int mail_return_days;
+	int mail_delete_days;
 };
 extern struct CharServ_Config charserv_config;
 
@@ -211,7 +222,6 @@ struct char_session_data {
 	uint8 char_slots; // total number of characters that can be created
 	uint8 chars_vip;
 	uint8 chars_billing;
-	uint32 version;
 	uint8 clienttype;
 	char new_name[NAME_LENGTH];
 	char birthdate[10+1];  // YYYY-MM-DD
@@ -304,5 +314,8 @@ const char* char_msg_txt(int msg_number);
 void char_do_final_msg(void);
 bool char_config_read(const char* cfgName, bool normal);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _CHAR_SQL_H_ */
