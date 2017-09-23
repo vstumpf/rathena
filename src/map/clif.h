@@ -1003,6 +1003,7 @@ void clif_spiritcharm(struct map_session_data *sd);
 
 void clif_snap( struct block_list *bl, short x, short y );
 void clif_monster_hp_bar( struct mob_data* md, int fd );
+void clif_monster_hp_bar_area(struct mob_data* md);
 
 // Clan System
 void clif_clan_basicinfo( struct map_session_data *sd );

@@ -1463,6 +1463,8 @@ int clif_spawn(struct block_list *bl)
 				clif_specialeffect(&md->bl,423,AREA);
 			else if(md->special_state.size==SZ_MEDIUM)
 				clif_specialeffect(&md->bl,421,AREA);
+			if (battle_config.monster_hp_bars_info == 2)
+				clif_monster_hp_bar_area(md);
 		}
 		break;
 	case BL_NPC:
@@ -4651,10 +4653,15 @@ void clif_getareachar_unit(struct map_session_data* sd,struct block_list *bl)
 				clif_specialeffect_single(bl,421,sd->fd);
 #if PACKETVER >= 20120404
 			if (battle_config.monster_hp_bars_info && !map[bl->m].flag.hidemobhpbar) {
-				int i;
-				for(i = 0; i < DAMAGELOG_SIZE; i++)// must show hp bar to all char who already hit the mob.
-					if( md->dmglog[i].id == sd->status.char_id )
-						clif_monster_hp_bar(md, sd->fd);
+				if (battle_config.monster_hp_bars_info == 2) {
+					clif_monster_hp_bar(md, sd->fd);
+				}
+				else {
+					int i;
+					for (i = 0; i < DAMAGELOG_SIZE; i++)// must show hp bar to all char who already hit the mob.
+						if (md->dmglog[i].id == sd->status.char_id)
+							clif_monster_hp_bar(md, sd->fd);
+				}
 			}
 #endif
 		}
@@ -18268,6 +18275,23 @@ void clif_monster_hp_bar( struct mob_data* md, int fd ) {
 	WFIFOL(fd,10) = md->status.max_hp;
 
 	WFIFOSET(fd,packet_len(0x977));
+#endif
+}
+
+/// 0977 <id>.L <HP>.L <maxHP>.L (ZC_HP_INFO).
+void clif_monster_hp_bar_area(struct mob_data* md) {
+#if PACKETVER >= 20120404
+
+	unsigned char buf[14];
+	nullpo_retv(md);
+
+	WBUFW(buf, 0) = 0x977;
+	WBUFL(buf, 2) = md->bl.id;
+	WBUFL(buf, 6) = md->status.hp;
+	WBUFL(buf, 10) = md->status.max_hp;
+	clif_send(buf, packet_len(0x977), &md->bl, AREA);
+
+
 #endif
 }
 
