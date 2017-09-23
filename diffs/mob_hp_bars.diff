@@ -1,0 +1,183 @@
+diff --git a/conf/battle/monster.conf b/conf/battle/monster.conf
+index beefa77..66533e9 100644
+--- a/conf/battle/monster.conf
++++ b/conf/battle/monster.conf
+@@ -256,7 +256,10 @@ boss_icewall_walk_block: 0
+ 
+ // Should HP bars be shown for monsters?
+ // 2012-04-04aRagexeRE or higher client required.
+-monster_hp_bars_info: yes
++// 0 = no
++// 1 = Only show if damaged
++// 2 = Shows to everyone who sees the monster
++monster_hp_bars_info: 2
+ 
+ // Should a monster respawn and a warning printed to the map server when a monster couldn't move for a long time?
+ // This can be legit gameplay (e.g. players keeping an MVP stuck inside icewall), but if you want to prevent any
+diff --git a/src/map/battle.c b/src/map/battle.c
+index f279ad5..d26938b 100644
+--- a/src/map/battle.c
++++ b/src/map/battle.c
+@@ -8400,7 +8400,7 @@ bool battle_check_range(struct block_list *src, struct block_list *bl, int range
+ 	{ "homunculus_evo_intimacy_reset",      &battle_config.homunculus_evo_intimacy_reset,   1000,   0,      INT_MAX,        },
+ 	{ "monster_loot_search_type",           &battle_config.monster_loot_search_type,        1,      0,      1,              },
+ 	{ "feature.roulette",                   &battle_config.feature_roulette,                1,      0,      1,              },
+-	{ "monster_hp_bars_info",               &battle_config.monster_hp_bars_info,            1,      0,      1,              },
++	{ "monster_hp_bars_info",               &battle_config.monster_hp_bars_info,            1,      0,      2,              },
+ 	{ "min_body_style",                     &battle_config.min_body_style,                  0,      0,      SHRT_MAX,       },
+ 	{ "max_body_style",                     &battle_config.max_body_style,                  4,      0,      SHRT_MAX,       },
+ 	{ "save_body_style",                    &battle_config.save_body_style,                 0,      0,      1,              },
+diff --git a/src/map/clif.cpp b/src/map/clif.cpp
+index 3e73656..9d247d4 100644
+--- a/src/map/clif.cpp
++++ b/src/map/clif.cpp
+@@ -1121,7 +1121,8 @@ static int clif_set_unit_idle(struct block_list* bl, unsigned char* buffer, bool
+ 	WBUFW(buf,53) = (sd ? sd->status.font : 0);
+ #endif
+ #if PACKETVER >= 20120221
+-	if ( battle_config.monster_hp_bars_info && !map[bl->m].flag.hidemobhpbar && bl->type == BL_MOB && (status_get_hp(bl) < status_get_max_hp(bl)) ) {
++	if ( battle_config.monster_hp_bars_info && !map[bl->m].flag.hidemobhpbar && bl->type == BL_MOB && 
++		((status_get_hp(bl) < status_get_max_hp(bl)) || (battle_config.monster_hp_bars_info == 2 && (status_get_hp(bl) <= status_get_max_hp(bl))))) {
+ 		WBUFL(buf,55) = status_get_max_hp(bl);		// maxHP
+ 		WBUFL(buf,59) = status_get_hp(bl);		// HP
+ 	} else {
+@@ -1264,7 +1265,8 @@ static int clif_set_unit_walking(struct block_list* bl, struct unit_data* ud, un
+ 	WBUFW(buf,60) = (sd ? sd->status.font : 0);
+ #endif
+ #if PACKETVER >= 20120221
+-	if ( battle_config.monster_hp_bars_info && !map[bl->m].flag.hidemobhpbar && bl->type == BL_MOB && (status_get_hp(bl) < status_get_max_hp(bl)) ) {
++	if ( battle_config.monster_hp_bars_info && !map[bl->m].flag.hidemobhpbar && bl->type == BL_MOB &&
++		((status_get_hp(bl) < status_get_max_hp(bl)) || (battle_config.monster_hp_bars_info == 2 && (status_get_hp(bl) <= status_get_max_hp(bl))))) {
+ 		WBUFL(buf,62) = status_get_max_hp(bl);		// maxHP
+ 		WBUFL(buf,66) = status_get_hp(bl);		// HP
+ 	} else {
+@@ -1463,6 +1465,8 @@ int clif_spawn(struct block_list *bl)
+ 				clif_specialeffect(&md->bl,423,AREA);
+ 			else if(md->special_state.size==SZ_MEDIUM)
+ 				clif_specialeffect(&md->bl,421,AREA);
++			if (battle_config.monster_hp_bars_info == 2)
++				clif_monster_hp_bar_area(md);
+ 		}
+ 		break;
+ 	case BL_NPC:
+@@ -4651,10 +4655,15 @@ void clif_getareachar_unit(struct map_session_data* sd,struct block_list *bl)
+ 				clif_specialeffect_single(bl,421,sd->fd);
+ #if PACKETVER >= 20120404
+ 			if (battle_config.monster_hp_bars_info && !map[bl->m].flag.hidemobhpbar) {
+-				int i;
+-				for(i = 0; i < DAMAGELOG_SIZE; i++)// must show hp bar to all char who already hit the mob.
+-					if( md->dmglog[i].id == sd->status.char_id )
+-						clif_monster_hp_bar(md, sd->fd);
++				if (battle_config.monster_hp_bars_info == 2) {
++					clif_monster_hp_bar(md, sd->fd);
++				}
++				else {
++					int i;
++					for (i = 0; i < DAMAGELOG_SIZE; i++)// must show hp bar to all char who already hit the mob.
++						if (md->dmglog[i].id == sd->status.char_id)
++							clif_monster_hp_bar(md, sd->fd);
++				}
+ 			}
+ #endif
+ 		}
+@@ -18271,6 +18280,23 @@ void clif_monster_hp_bar( struct mob_data* md, int fd ) {
+ #endif
+ }
+ 
++/// 0977 <id>.L <HP>.L <maxHP>.L (ZC_HP_INFO).
++void clif_monster_hp_bar_area(struct mob_data* md) {
++#if PACKETVER >= 20120404
++
++	unsigned char buf[14];
++	nullpo_retv(md);
++
++	WBUFW(buf, 0) = 0x977;
++	WBUFL(buf, 2) = md->bl.id;
++	WBUFL(buf, 6) = md->status.hp;
++	WBUFL(buf, 10) = md->status.max_hp;
++	clif_send(buf, packet_len(0x977), &md->bl, AREA);
++
++
++#endif
++}
++
+ /* [Ind] placeholder for unsupported incoming packets (avoids server disconnecting client) */
+ void __attribute__ ((unused)) clif_parse_dull(int fd, struct map_session_data *sd) {
+ 	return;
+diff --git a/src/map/clif.h b/src/map/clif.h
+index 262078a..4df245e 100644
+--- a/src/map/clif.h
++++ b/src/map/clif.h
+@@ -1003,6 +1003,7 @@ void clif_spiritcharm(struct map_session_data *sd);
+ 
+ void clif_snap( struct block_list *bl, short x, short y );
+ void clif_monster_hp_bar( struct mob_data* md, int fd );
++void clif_monster_hp_bar_area(struct mob_data* md);
+ 
+ // Clan System
+ void clif_clan_basicinfo( struct map_session_data *sd );
+diff --git a/src/map/mob.c b/src/map/mob.c
+index 1882d4f..512b654 100644
+--- a/src/map/mob.c
++++ b/src/map/mob.c
+@@ -2345,6 +2345,7 @@ void mob_log_damage(struct mob_data *md, struct block_list *src, int damage)
+ 	}
+ 	return;
+ }
++
+ //Call when a mob has received damage.
+ void mob_damage(struct mob_data *md, struct block_list *src, int damage)
+ {
+@@ -2369,11 +2370,16 @@ void mob_damage(struct mob_data *md, struct block_list *src, int damage)
+ 
+ #if PACKETVER >= 20120404
+ 	if (battle_config.monster_hp_bars_info && !map[md->bl.m].flag.hidemobhpbar) {
+-		int i;
+-		for(i = 0; i < DAMAGELOG_SIZE; i++){ // must show hp bar to all char who already hit the mob.
+-			struct map_session_data *sd = map_charid2sd(md->dmglog[i].id);
+-			if( sd && check_distance_bl(&md->bl, &sd->bl, AREA_SIZE) ) // check if in range
+-				clif_monster_hp_bar(md, sd->fd);
++		if (battle_config.monster_hp_bars_info == 2) {
++			clif_monster_hp_bar_area(md);
++		}
++		else {
++			int i;
++			for (i = 0; i < DAMAGELOG_SIZE; i++) { // must show hp bar to all char who already hit the mob.
++				struct map_session_data *sd = map_charid2sd(md->dmglog[i].id);
++				if (sd && check_distance_bl(&md->bl, &sd->bl, AREA_SIZE)) // check if in range
++					clif_monster_hp_bar(md, sd->fd);
++			}
+ 		}
+ 	}
+ #endif
+@@ -3178,17 +3184,23 @@ void mob_heal(struct mob_data *md,unsigned int heal)
+ 		clif_name_area(&md->bl);
+ #if PACKETVER >= 20120404
+ 	if (battle_config.monster_hp_bars_info && !map[md->bl.m].flag.hidemobhpbar) {
+-		int i;
+-		for(i = 0; i < DAMAGELOG_SIZE; i++)// must show hp bar to all char who already hit the mob.
+-			if( md->dmglog[i].id ) {
+-				struct map_session_data *sd = map_charid2sd(md->dmglog[i].id);
+-				if( sd && check_distance_bl(&md->bl, &sd->bl, AREA_SIZE) ) // check if in range
+-					clif_monster_hp_bar(md, sd->fd);
+-			}
++		if (battle_config.monster_hp_bars_info == 2) {
++			clif_monster_hp_bar_area(md);
++		}
++		else {
++			int i;
++			for (i = 0; i < DAMAGELOG_SIZE; i++)// must show hp bar to all char who already hit the mob.
++				if (md->dmglog[i].id) {
++					struct map_session_data *sd = map_charid2sd(md->dmglog[i].id);
++					if (sd && check_distance_bl(&md->bl, &sd->bl, AREA_SIZE)) // check if in range
++						clif_monster_hp_bar(md, sd->fd);
++				}
++		}
+ 	}
+ #endif
+ }
+ 
++
+ /*==========================================
+  * Added by RoVeRT
+  *------------------------------------------*/
