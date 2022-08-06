@@ -11,8 +11,8 @@
 #include <httplib.h>
 
 
-typedef httplib::Request Request;
-typedef httplib::Response Response;
+using Request = httplib::Request;
+using Response = httplib::Response;
 
 #define HANDLER_FUNC(x) void x (const Request &req, Response &res)
 typedef HANDLER_FUNC((*handler_func));

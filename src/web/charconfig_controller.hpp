@@ -1,8 +1,8 @@
 // Copyright (c) rAthena Dev Teams - Licensed under GNU GPL
 // For more information, see LICENCE in the main folder
 
-#ifndef CHARCONFIG_CONTROLLER_HPP
-#define CHARCONFIG_CONTROLLER_HPP
+#ifndef CHARCONFIG_CONTROLLER2_HPP
+#define CHARCONFIG_CONTROLLER2_HPP
 
 #include "http.hpp"
 
