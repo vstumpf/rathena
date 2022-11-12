@@ -6193,7 +6193,7 @@ void clif_skill_estimation(struct map_session_data *sd, struct block_list *dst) 
 	WBUFW(buf, 18) = status->def_ele;
 	for (i = 0; i < 9; i++)
 		//		The following caps negative attributes to 0 since the client displays them as
-		//255-fix. [Skotlex]
+		// 255-fix. [Skotlex]
 		WBUFB(buf, 20 + i) = (unsigned char)((fix = elemental_attribute_db.getAttribute(
 												  status->ele_lv, i + 1, status->def_ele)) < 0
 												 ? 0
@@ -15606,7 +15606,7 @@ void clif_Mail_window(int fd, int flag) {
 ///< title>.?B }*
 /// 0ac2 <packet len>.W <unknown>.B (ZC_ACK_MAIL_LIST3)
 ///		{ <type>.B <mail id>.Q <read>.B <type>.B <sender>.24B <expires>.L <title length>.W
-///<title>.?B
+///< title>.?B
 ///}*
 void clif_Mail_refreshinbox(struct map_session_data *sd, enum mail_inbox_type type, int64 mailID) {
 #if PACKETVER < 20150513

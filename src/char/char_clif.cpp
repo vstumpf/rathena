@@ -1293,13 +1293,15 @@ void chclif_block_character(int fd, struct char_session_data* sd) {
 // result:
 //		0: Successful
 //		1: This character's name has already been changed. You cannot change a character's name more
-// than once. 		2: User information is not correct. 		3: You have failed to change this character's
-// name. 		4: Another user is using this character name, so please select another one. 		5: In order to
-//change the character name, you must leave the guild. 		6: In order to change the character name, you
-//must leave the party. 		7: Length exceeds the maximum size of the character name you want to change.
-//		8: Name contains invalid characters. Character name change failed.
-//		9: The name change is prohibited. Character name change failed.
-//		10: Character name change failed, due an unknown error.
+// than once. 		2: User information is not correct. 		3: You have failed to change this
+// character's
+// name. 		4: Another user is using this character name, so please select another one. 		5: In order
+// to
+// change the character name, you must leave the guild. 		6: In order to change the character name,
+// you
+// must leave the party. 		7: Length exceeds the maximum size of the character name you want to
+// change. 		8: Name contains invalid characters. Character name change failed. 		9: The name change is
+//prohibited. Character name change failed. 		10: Character name change failed, due an unknown error.
 void chclif_rename_response(int fd, struct char_session_data* sd, int16 response) {
 #if PACKETVER >= 20111101
 	WFIFOHEAD(fd, 6);

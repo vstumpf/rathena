@@ -9952,7 +9952,7 @@ enum damage_lv battle_weapon_attack(struct block_list *src, struct block_list *t
 		if (damage > 0 && tsc->data[SC_POISONREACT] &&
 			(rnd() % 100 < tsc->data[SC_POISONREACT]->val3 || sstatus->def_ele == ELE_POISON) &&
 			//			check_distance_bl(src, target, tstatus->rhw.range+1) && Doesn't checks
-			//range! o.O;
+			// range! o.O;
 			status_check_skilluse(target, src, TF_POISON, 0)) {	 // Poison React
 			struct status_change_entry *sce = tsc->data[SC_POISONREACT];
 			if (sstatus->def_ele == ELE_POISON) {
