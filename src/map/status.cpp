@@ -1526,7 +1526,7 @@ int status_damage(struct block_list *src, struct block_list *target, int64 dhp, 
 
 	if (sc && hp && status->hp) {
 		if (sc->data[SC_AUTOBERSERK] && (!sc->data[SC_PROVOKE] || !sc->data[SC_PROVOKE]->val4) &&
-			status->hp<status->max_hp> > 2)
+			status->hp < (status->max_hp >> 2))
 			sc_start4(src, target, SC_PROVOKE, 100, 10, 0, 0, 1, 0);
 		if (sc->data[SC_BERSERK] && status->hp <= 100)
 			status_change_end(target, SC_BERSERK);
@@ -10782,7 +10782,7 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 					tick = INFINITE_TICK;
 				break;
 			case SC_AUTOBERSERK:
-				if (status->hp<status->max_hp> > 2 &&
+				if (status->hp < (status->max_hp >> 2) &&
 					(!sc->data[SC_PROVOKE] || sc->data[SC_PROVOKE]->val4 == 0))
 					sc_start4(src, bl, SC_PROVOKE, 100, 10, 0, 0, 1, 60000);
 				tick = INFINITE_TICK;
@@ -11072,7 +11072,7 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				// Lose 10/15% of your life as long as it doesn't brings life below 25%
 				if (status->hp > status->max_hp >> 2) {
 					int diff = status->max_hp * (bl->type == BL_PC ? 10 : 15) / 100;
-					if (status->hp - diff<status->max_hp> > 2)
+					if ((status->hp - diff) < (status->max_hp >> 2))
 						diff = status->hp - (status->max_hp >> 2);
 					status_zap(bl, diff, 0);
 				}

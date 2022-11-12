@@ -4462,7 +4462,7 @@ static int battle_calc_attack_skill_ratio(struct Damage *wd, struct block_list *
 		case AS_SONICBLOW:
 #ifdef RENEWAL
 			skillratio += 100 + 100 * skill_lv;
-			if (tstatus->hp<tstatus->max_hp> > 1)
+			if ((tstatus->hp<tstatus->max_hp) >> 1)
 				skillratio += skillratio / 2;
 #else
 			skillratio += 300 + 40 * skill_lv;
