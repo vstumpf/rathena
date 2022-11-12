@@ -21,6 +21,7 @@
 #if defined(MEMWATCH)
 
 #include <string.h>
+
 #include "memwatch.h"
 #define MALLOC(n, file, line, func) mwMalloc((n), (file), (line))
 #define CALLOC(m, n, file, line, func) mwCalloc((m), (n), (file), (line))
@@ -33,8 +34,9 @@
 
 #elif defined(DMALLOC)
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+
 #include "dmalloc.hpp"
 #define MALLOC(n, file, line, func) dmalloc_malloc((file), (line), (n), DMALLOC_FUNC_MALLOC, 0, 0)
 #define CALLOC(m, n, file, line, func) \

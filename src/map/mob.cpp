@@ -701,7 +701,7 @@ int mob_once_spawn(struct map_session_data *sd, int16 m, int16 x, int16 y, const
 		if (mob_id < 0 && battle_config.dead_branch_active)
 			// Behold Aegis's masterful decisions yet again...
 			//"I understand the "Aggressive" part, but the "Can Move" and "Can Attack" is just
-			//stupid" - Poki#3
+			// stupid" - Poki#3
 			sc_start4(NULL, &md->bl, SC_MODECHANGE, 100, 1, 0,
 					  MD_AGGRESSIVE | MD_CANATTACK | MD_CANMOVE | MD_ANGRY, 0, 60000);
 	}
@@ -1953,9 +1953,9 @@ static bool mob_ai_sub_hard(struct mob_data *md, t_tick tick) {
 
 	// Out of range...
 	if (!(mode & MD_CANMOVE) ||
-		(!can_move &&
-		 DIFF_TICK(tick, md->ud.canmove_tick) > 0)) {  // Can't chase. Immobile and trapped mobs
-													   // should unlock target and use an idle skill.
+		(!can_move && DIFF_TICK(tick, md->ud.canmove_tick) >
+						  0)) {	 // Can't chase. Immobile and trapped mobs
+								 // should unlock target and use an idle skill.
 		if (md->ud.attacktimer ==
 			INVALID_TIMER) {  // Only unlock target if no more attack delay left
 			// This handles triggering idle/walk skill.

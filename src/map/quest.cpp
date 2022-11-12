@@ -824,7 +824,7 @@ void quest_update_objective(struct map_session_data *sd, struct mob_data *md) {
 				clif_additem(sd, 0, 0, result);
 			//			else if (it.isAnnounced || item_db.find(it.nameid)->flag.broadcast)
 			//				intif_broadcast_obtain_special_item(sd, it.nameid, it.mob_id,
-			//ITEMOBTAIN_TYPE_MONSTER_ITEM);
+			// ITEMOBTAIN_TYPE_MONSTER_ITEM);
 		}
 	}
 	pc_show_questinfo(sd);

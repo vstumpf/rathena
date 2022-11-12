@@ -439,7 +439,7 @@ int map_moveblock(struct block_list *bl, int x1, int y1, t_tick tick) {
 			status_change_end(bl, SC_TINDER_BREAKER);
 			status_change_end(bl, SC_TINDER_BREAKER2);
 			//		status_change_end(bl, SC_BLADESTOP); //Won't stop when you are knocked away, go
-			//figure...
+			// figure...
 			status_change_end(bl, SC_TATAMIGAESHI);
 			status_change_end(bl, SC_MAGICROD);
 			status_change_end(bl, SC_SU_STOOP);

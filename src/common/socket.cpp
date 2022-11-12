@@ -8,8 +8,8 @@
 #ifdef WIN32
 #include "winapi.hpp"
 #else
-#include <errno.h>
 #include <arpa/inet.h>
+#include <errno.h>
 #include <net/if.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
@@ -220,7 +220,7 @@ fd_set readfds;
 static int epoll_maxevents = (MAXCONN / 2);
 static int epfd = SOCKET_ERROR;
 static struct epoll_event epevent;
-static struct epoll_event *epevents = nullptr;
+static struct epoll_event* epevents = nullptr;
 #endif
 
 int fd_max;
@@ -684,7 +684,7 @@ int make_connection(uint32 ip, uint16 port, bool silent, int timeout) {
 	// Keep the socket in non-blocking mode, since we would set it to non-blocking here on unix.
 	// [Lemongrass]
 #else
-	result = sConnect(fd, (struct sockaddr *)(&remote_address), sizeof(struct sockaddr_in));
+	result = sConnect(fd, (struct sockaddr*)(&remote_address), sizeof(struct sockaddr_in));
 	if (result == SOCKET_ERROR) {
 		if (!silent)
 			ShowError("make_connection: connect failed (socket #%d, %s)!\n", fd, error_msg());
@@ -964,9 +964,9 @@ int do_sockets(t_tick next) {
 	// epoll based selection
 
 	for (i = 0; i < ret; i++) {
-		struct epoll_event *it = &epevents[i];
+		struct epoll_event* it = &epevents[i];
 		int fd = it->data.fd;
-		struct socket_data *sock = session[fd];
+		struct socket_data* sock = session[fd];
 
 		if (!sock) {
 			continue;
@@ -1494,8 +1494,8 @@ int socket_getips(uint32* ips, int max) {
 		} else {
 			int pos;
 			for (pos = 0; pos < ic.ifc_len && num < max;) {
-				struct ifreq *ir = (struct ifreq *)(buf + pos);
-				struct sockaddr_in *a = (struct sockaddr_in *)&(ir->ifr_addr);
+				struct ifreq* ir = (struct ifreq*)(buf + pos);
+				struct sockaddr_in* a = (struct sockaddr_in*)&(ir->ifr_addr);
 				if (a->sin_family == AF_INET) {
 					ad = ntohl(a->sin_addr.s_addr);
 					if (ad != INADDR_LOOPBACK && ad != INADDR_ANY)
@@ -1548,7 +1548,7 @@ void socket_init(void) {
 										 // change system limits is required)
 				rlp.rlim_max = MAXCONN;
 				if (0 != setrlimit(RLIMIT_NOFILE, &rlp)) {	// failed
-					const char *errmsg = error_msg();
+					const char* errmsg = error_msg();
 					int rlim_ori;
 					// set to maximum allowed
 					getrlimit(RLIMIT_NOFILE, &rlp);
@@ -1585,7 +1585,7 @@ void socket_init(void) {
 	}
 
 	memset(&epevent, 0x00, sizeof(struct epoll_event));
-	epevents = (struct epoll_event *)aCalloc(epoll_maxevents, sizeof(struct epoll_event));
+	epevents = (struct epoll_event*)aCalloc(epoll_maxevents, sizeof(struct epoll_event));
 
 	ShowInfo("Server uses '" CL_WHITE "epoll" CL_RESET "' with up to " CL_WHITE "%d" CL_RESET
 			 " events per cycle as event dispatcher\n",

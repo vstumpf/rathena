@@ -389,8 +389,9 @@ int intif_broadcast(const char *mes, int len, int type) {
 	WFIFOW(inter_fd, 12) = 0;		   // fontAlign not used with standard broadcast
 	WFIFOW(inter_fd, 14) = 0;		   // fontY not used with standard broadcast
 	if (type | BC_BLUE)
-		WFIFOL(inter_fd, 16) = 0x65756c62;	// If there's "blue" at the beginning of the message,
-											// game client will display it in blue instead of yellow.
+		WFIFOL(inter_fd, 16) =
+			0x65756c62;	 // If there's "blue" at the beginning of the message,
+						 // game client will display it in blue instead of yellow.
 	else if (type | BC_WOE)
 		WFIFOL(inter_fd, 16) = 0x73737373;	// If there's "ssss", game client will recognize message
 											// as 'WoE broadcast'.
@@ -3522,7 +3523,7 @@ void intif_parse_itembound_store2gstorage(int fd) {
 	}
 
 	//@TODO: Gives some actions for item(s) that cannot be stored because storage is full or reach
-	//the limit of stack amount
+	// the limit of stack amount
 	for (i = 0; i < count; i++) {
 		struct item *item = (struct item *)RFIFOP(fd, 8 + i * sizeof(struct item));
 		if (!item)

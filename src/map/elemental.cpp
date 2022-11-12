@@ -57,7 +57,7 @@ int elemental_create(map_session_data *sd, int class_, unsigned int lifetime) {
 	int i = db->status.size + 1;  // summon level
 
 	//[(Caster's Max HP/ 3 ) + (Caster's INT x 10 )+ (Caster's Job Level x 20 )] x [(Elemental
-	//Summon Level + 2) / 3]
+	// Summon Level + 2) / 3]
 	ele.hp = ele.max_hp =
 		(sd->battle_status.max_hp / 3 + sd->battle_status.int_ * 10 + sd->status.job_level * 20) *
 		((i + 2) / 3);

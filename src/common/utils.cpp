@@ -13,9 +13,9 @@
 #define F_OK 0x0
 #endif /* F_OK */
 #else
-#include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 #include "cbasetypes.hpp"

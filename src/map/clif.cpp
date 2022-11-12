@@ -6192,8 +6192,8 @@ void clif_skill_estimation(struct map_session_data *sd, struct block_list *dst) 
 					 (battle_config.estimation_type & 2 ? status->mdef2 : 0);
 	WBUFW(buf, 18) = status->def_ele;
 	for (i = 0; i < 9; i++)
-		//		The following caps negative attributes to 0 since the client displays them as 255-fix.
-		//[Skotlex]
+		//		The following caps negative attributes to 0 since the client displays them as
+		//255-fix. [Skotlex]
 		WBUFB(buf, 20 + i) = (unsigned char)((fix = elemental_attribute_db.getAttribute(
 												  status->ele_lv, i + 1, status->def_ele)) < 0
 												 ? 0
@@ -6792,7 +6792,7 @@ void clif_map_property(struct block_list *bl, enum map_property property, enum s
 		((!mapdata->flag[MF_NOSUNMOONSTARMIRACLE])
 		 << 10);  // SUNMOONSTAR_MIRACLE - Allows Star Gladiator's Miracle to activate
 	//(1<<11); // Unused bits. 1 - 10 is 0x1 length and 11 is 0x15 length. May be used for future
-	//settings.
+	// settings.
 #endif
 
 	clif_send(buf, packet_len(cmd), bl, t);
@@ -8846,7 +8846,7 @@ void clif_guild_memberlist(struct map_session_data &sd) {
 #else
 		memset(member_info.intro, 0,
 			   sizeof(member_info.intro));	//[Ind] - This is displayed in the 'note' column but
-											//being you can't edit it it's sent empty.
+											// being you can't edit it it's sent empty.
 		safestrncpy(member_info.char_name, member.name, sizeof(member_info.char_name));
 #endif
 
@@ -14093,7 +14093,7 @@ void clif_parse_GuildChangeEmblem(int fd, struct map_session_data *sd) {
 					 inter_config.emblem_transparency_limit);
 		clif_messagecolor(&sd->bl, color_table[COLOR_RED], output, false,
 						  SELF);  //"The chosen emblem was detected invalid as it contain too much
-								  //transparency (limit=%d)\n"
+								  // transparency (limit=%d)\n"
 		return;
 	}
 
@@ -15153,7 +15153,7 @@ void clif_parse_FriendsListRemove(int fd, struct map_session_data *sd) {
 	} else {  // friend not online -- ask char server to delete from his friendlist
 		if (chrif_removefriend(char_id, sd->status.char_id)) {	// char-server offline, abort
 			clif_displaymessage(fd, msg_txt(sd, 673));	//"This action can't be performed at the
-														//moment. Please try again later."
+														// moment. Please try again later."
 			return;
 		}
 	}
@@ -15600,12 +15600,13 @@ void clif_Mail_window(int fd, int flag) {
 ///     1 = read
 /// 09f0 <packet len>.W <type>.B <amount>.B <last page>.B (ZC_ACK_MAIL_LIST)
 ///		{ <mail id>.Q <read>.B <type>.B <sender>.24B <received>.L <expires>.L <title length>.W
-///<title>.?B }*
+///< title>.?B }*
 /// 0a7d <packet len>.W <type>.B <amount>.B <last page>.B (ZC_ACK_MAIL_LIST2)
 ///		{ <mail id>.Q <read>.B <type>.B <sender>.24B <received>.L <expires>.L <title length>.W
-///<title>.?B }*
+///< title>.?B }*
 /// 0ac2 <packet len>.W <unknown>.B (ZC_ACK_MAIL_LIST3)
-///		{ <type>.B <mail id>.Q <read>.B <type>.B <sender>.24B <expires>.L <title length>.W <title>.?B
+///		{ <type>.B <mail id>.Q <read>.B <type>.B <sender>.24B <expires>.L <title length>.W
+///<title>.?B
 ///}*
 void clif_Mail_refreshinbox(struct map_session_data *sd, enum mail_inbox_type type, int64 mailID) {
 #if PACKETVER < 20150513

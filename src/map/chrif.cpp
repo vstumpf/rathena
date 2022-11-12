@@ -41,26 +41,26 @@ static bool char_init_done =
 
 static const int packet_len_table[0x3d] = {
 	// U - used, F - free
-	60, 3,	-1, -1, 10,
-	-1, 6,	-1,	 // 2af8-2aff: U->2af8, U->2af9, U->2afa, U->2afb, U->2afc, U->2afd, U->2afe,
-				 // U->2aff
-	6,	-1, 18, 7,	-1,
-	39, 30, 10,	 // 2b00-2b07: U->2b00, U->2b01, U->2b02, U->2b03, U->2b04, U->2b05, U->2b06,
-				 // U->2b07
-	6,	30, 10, -1, 86,
-	7,	44, 34,	 // 2b08-2b0f: U->2b08, U->2b09, U->2b0a, U->2b0b, U->2b0c, U->2b0d, U->2b0e,
-				 // U->2b0f
-	11, 10, 10, 0,	11,
-	-1, 0,	10,	 // 2b10-2b17: U->2b10, U->2b11, U->2b12, F->2b13, U->2b14, U->2b15, F->2b16,
-				 // U->2b17
-	2,	10, 2,	-1, -1,
-	-1, 2,	7,	// 2b18-2b1f: U->2b18, U->2b19, U->2b1a, U->2b1b, U->2b1c, U->2b1d, U->2b1e, U->2b1f
-	-1, 10, 8,	2,	2,
-	14, 19, 19,	 // 2b20-2b27: U->2b20, U->2b21, U->2b22, U->2b23, U->2b24, U->2b25, U->2b26,
-				 // U->2b27
-	-1, 0,	6,	15, 0,
-	6,	-1, -1,	 // 2b28-2b2f: U->2b28, F->2b29, U->2b2a, U->2b2b, F->2b2c, U->2b2d, U->2b2e,
-				 // U->2b2f
+	60, 3, -1, -1, 10, -1, 6,
+	-1,	 // 2af8-2aff: U->2af8, U->2af9, U->2afa, U->2afb, U->2afc, U->2afd, U->2afe,
+	// U->2aff
+	6, -1, 18, 7, -1, 39, 30,
+	10,	 // 2b00-2b07: U->2b00, U->2b01, U->2b02, U->2b03, U->2b04, U->2b05, U->2b06,
+	// U->2b07
+	6, 30, 10, -1, 86, 7, 44,
+	34,	 // 2b08-2b0f: U->2b08, U->2b09, U->2b0a, U->2b0b, U->2b0c, U->2b0d, U->2b0e,
+	// U->2b0f
+	11, 10, 10, 0, 11, -1, 0,
+	10,	 // 2b10-2b17: U->2b10, U->2b11, U->2b12, F->2b13, U->2b14, U->2b15, F->2b16,
+	// U->2b17
+	2, 10, 2, -1, -1, -1, 2,
+	7,	// 2b18-2b1f: U->2b18, U->2b19, U->2b1a, U->2b1b, U->2b1c, U->2b1d, U->2b1e, U->2b1f
+	-1, 10, 8, 2, 2, 14, 19,
+	19,	 // 2b20-2b27: U->2b20, U->2b21, U->2b22, U->2b23, U->2b24, U->2b25, U->2b26,
+	// U->2b27
+	-1, 0, 6, 15, 0, 6, -1,
+	-1,	 // 2b28-2b2f: U->2b28, F->2b29, U->2b2a, U->2b2b, F->2b2c, U->2b2d, U->2b2e,
+		 // U->2b2f
 };
 
 // Used Packets:
@@ -68,7 +68,8 @@ static const int packet_len_table[0x3d] = {
 // 2af9: Incoming, chrif_connectack -> 'answer of the 2af8 login(ok / fail)'
 // 2afa: Outgoing, chrif_sendmap -> 'sending our maps'
 // 2afb: Incoming, chrif_sendmapack -> 'Maps received successfully / or not .. also received server
-// name & default map' 2afc: Outgoing, chrif_scdata_request -> request sc_data for pc_authok'ed char.
+// name & default map' 2afc: Outgoing, chrif_scdata_request -> request sc_data for pc_authok'ed
+// char.
 // <- new command reuses previous one. 2afd: Incoming, chrif_authok -> 'client authentication ok'
 // 2afe: Outgoing, send_usercount_tochar -> 'sends player count of this map server to charserver'
 // 2aff: Outgoing, send_users_tochar -> 'sends all actual connected character ids to charserver'
@@ -1254,8 +1255,8 @@ int chrif_disconnectplayer(int fd) {
 		if (sd->state.autotrade)
 			map_quit(sd);
 		// Else we don't remove it because the char should have a timer to remove the player because
-		// it force-quit before, and we don't want them kicking their previous instance before the 10
-		// secs penalty time passes. [Skotlex]
+		// it force-quit before, and we don't want them kicking their previous instance before the
+		// 10 secs penalty time passes. [Skotlex]
 		return 0;
 	}
 

@@ -390,7 +390,7 @@ struct map_session_data {
 		unsigned int deal_locked : 2;  // 1: Clicked on OK. 2: Clicked on TRADE
 		unsigned int size : 2;		   // for tiny/large types
 		unsigned int night : 1;		   // Holds whether or not the player currently has the SI_NIGHT
-								 // effect on. [Skotlex]
+									   // effect on. [Skotlex]
 		unsigned int using_fake_npc : 1;
 		unsigned int rewarp : 1;  // Signals that a player should warp as soon as he is done loading
 								  // a map. [Skotlex]
@@ -491,7 +491,7 @@ struct map_session_data {
 	std::vector<int> areanpc, npc_ontouch_;	 ///< Array of OnTouch and OnTouch_ NPC ID
 	int npc_item_flag;	// Marks the npc_id with which you can use items during interactions with
 						// said npc (see script command enable_itemuse)
-	int npc_menu;  // internal variable, used in npc menu handling
+	int npc_menu;		// internal variable, used in npc menu handling
 	int npc_amount;
 	struct script_state *st;
 	char npc_str[CHATBOX_SIZE];	 // for passing npc input box text to script engine

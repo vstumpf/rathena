@@ -4462,7 +4462,7 @@ static int battle_calc_attack_skill_ratio(struct Damage *wd, struct block_list *
 		case AS_SONICBLOW:
 #ifdef RENEWAL
 			skillratio += 100 + 100 * skill_lv;
-			if ((tstatus->hp<tstatus->max_hp) >> 1)
+			if ((tstatus->hp < tstatus->max_hp) >> 1)
 				skillratio += skillratio / 2;
 #else
 			skillratio += 300 + 40 * skill_lv;
@@ -6691,7 +6691,7 @@ static void battle_calc_weapon_final_atk_modifiers(struct Damage *wd, struct blo
 		if (!skill_id && wd->dmg_lv > ATK_BLOCK) {
 			if (sc->data[SC_ENCHANTBLADE]) {
 				//[((Skill Lv x 20) + 100) x (casterBaseLevel / 150)] + casterInt + MATK - MDEF -
-				//MDEF2
+				// MDEF2
 				int64 enchant_dmg = sc->data[SC_ENCHANTBLADE]->val2;
 				if (sstatus->matk_max > sstatus->matk_min)
 					enchant_dmg = enchant_dmg + sstatus->matk_min +
@@ -7554,7 +7554,7 @@ struct Damage battle_calc_magic_attack(struct block_list *src, struct block_list
 			if (tstatus->def_ele == ELE_FIRE ||
 				battle_check_undead(tstatus->race, tstatus->def_ele))
 				ad.blewcount = 0;  // No knockback
-			// Fall through
+								   // Fall through
 		case NJ_KAENSIN:
 		case PR_SANCTUARY:
 			ad.dmotion = 1;	 // No flinch animation.
@@ -9951,8 +9951,8 @@ enum damage_lv battle_weapon_attack(struct block_list *src, struct block_list *t
 	if (tsc) {
 		if (damage > 0 && tsc->data[SC_POISONREACT] &&
 			(rnd() % 100 < tsc->data[SC_POISONREACT]->val3 || sstatus->def_ele == ELE_POISON) &&
-			//			check_distance_bl(src, target, tstatus->rhw.range+1) && Doesn't checks range!
-			//o.O;
+			//			check_distance_bl(src, target, tstatus->rhw.range+1) && Doesn't checks
+			//range! o.O;
 			status_check_skilluse(target, src, TF_POISON, 0)) {	 // Poison React
 			struct status_change_entry *sce = tsc->data[SC_POISONREACT];
 			if (sstatus->def_ele == ELE_POISON) {
@@ -10933,7 +10933,7 @@ static const struct _battle_data {
 		1,
 	},
 	//	{ "mob_skill_use",                      &battle_config.mob_skill_use,                   1,
-	//0,      1,              }, //Deprecated
+	// 0,      1,              }, //Deprecated
 	{
 		"mob_skill_rate",
 		&battle_config.mob_skill_rate,

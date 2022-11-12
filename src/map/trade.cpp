@@ -222,7 +222,7 @@ int impossible_trade_check(struct map_session_data *sd) {
 				// message about the ban
 				strcpy(message_to_gm,
 					   msg_txt(sd, 540));  //  This player has been definitively blocked.
-				// if we ban people
+										   // if we ban people
 			} else if (battle_config.ban_hack_trade > 0) {
 				chrif_req_login_operation(
 					-1, sd->status.name, CHRIF_OP_LOGIN_BAN, battle_config.ban_hack_trade * 60, 0,

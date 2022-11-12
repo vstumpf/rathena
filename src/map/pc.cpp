@@ -1392,7 +1392,7 @@ void pc_setequipindex(struct map_session_data *sd) {
 //		s = MAX_SLOTS - 1;
 //
 //	ARR_FIND( 0, s, i, item->card[i] && (data = item_db.find(item->card[i])) != NULL &&
-//data->flag.no_equip&flag ); 	return( i < s ) ? 0 : 1;
+// data->flag.no_equip&flag ); 	return( i < s ) ? 0 : 1;
 //}
 
 /**
@@ -6959,7 +6959,7 @@ enum e_setpos pc_setpos(struct map_session_data *sd, unsigned short mapindex, in
 					sd->status.name, sd->status.account_id, sd->status.char_id,
 					mapindex_id2name(mapindex));
 				return SETPOS_OK;  // preventing warp
-				// break; //allow warp anyway
+								   // break; //allow warp anyway
 			}
 		} while (map_getcell(m, x, y, CELL_CHKNOPASS) ||
 				 (!battle_config.teleport_on_portal && npc_check_areanpc(1, m, x, y, 1)));
@@ -9331,7 +9331,7 @@ void pc_skillup(struct map_session_data *sd, uint16 skill_id) {
 		}
 		// else
 		//	ShowDebug("Skill Level up failed. ID:%d idx:%d (CID=%d. AID=%d)\n", skill_id, idx,
-		//sd->status.char_id, sd->status.account_id);
+		// sd->status.char_id, sd->status.account_id);
 	}
 }
 

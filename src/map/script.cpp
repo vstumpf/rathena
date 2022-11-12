@@ -270,9 +270,9 @@ struct Script_Config script_config = {
 	"OnTouchNPC",  // ontouchnpc_event_name (run whenever a monster walks into the OnTouch area)
 	"OnWhisperGlobal",	// onwhisper_event_name (is executed when a player sends a whisper message
 						// to the NPC)
-	"OnCommand",   // oncommand_event_name (is executed by script command cmdothernpc)
-	"OnBuyItem",   // onbuy_event_name (is executed when items are bought)
-	"OnSellItem",  // onsell_event_name (is executed when items are sold)
+	"OnCommand",		// oncommand_event_name (is executed by script command cmdothernpc)
+	"OnBuyItem",		// onbuy_event_name (is executed when items are bought)
+	"OnSellItem",		// onsell_event_name (is executed when items are sold)
 	// Init related
 	"OnInit",			  // init_event_name (is executed on all npcs when all npcs were loaded)
 	"OnInterIfInit",	  // inter_init_event_name (is executed on inter server connection)
@@ -281,9 +281,9 @@ struct Script_Config script_config = {
 	// Guild related
 	"OnGuildBreak",	 // guild_break_event_name (is executed on all castles of the guild that is
 					 // broken)
-	"OnAgitStart",	// agit_start_event_name (is executed when WoE FE is started)
-	"OnAgitInit",	// agit_init_event_name (is executed after all castle owning guilds have been
-				   // loaded)
+	"OnAgitStart",	 // agit_start_event_name (is executed when WoE FE is started)
+	"OnAgitInit",	 // agit_init_event_name (is executed after all castle owning guilds have been
+					 // loaded)
 	"OnAgitEnd",	 // agit_end_event_name (is executed when WoE FE has ended)
 	"OnAgitStart2",	 // agit_start2_event_name (is executed when WoE SE is started)
 	"OnAgitInit2",	 // agit_init2_event_name (is executed after all castle owning guilds have been
@@ -318,7 +318,7 @@ struct Script_Config script_config = {
 	"OnInstanceInit",	  // instance_init_event_name (is executed right after instance creation)
 	"OnInstanceDestroy",  // instance_destroy_event_name (is executed right before instance
 						  // destruction)
-	"OnNaviGenerate",  // navi_generate_name (is executed right before navi generation)
+	"OnNaviGenerate",	  // navi_generate_name (is executed right before navi generation)
 };
 
 static jmp_buf error_jump;
@@ -8059,8 +8059,8 @@ BUILDIN_FUNC(getnameditem) {
 
 	if (!item_db.exists(
 			nameid) /* || itemdb_isstackable(nameid)*/) {  // Even though named stackable items
-														   // "could" be risky, they are required for
-														   // certain quests.
+														   // "could" be risky, they are required
+														   // for certain quests.
 		script_pushint(st, 0);
 		return SCRIPT_CMD_SUCCESS;
 	}

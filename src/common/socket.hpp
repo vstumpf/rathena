@@ -10,9 +10,9 @@
 #include "winapi.hpp"
 typedef long in_addr_t;
 #else
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #endif
 #include <time.h>
 

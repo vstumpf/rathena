@@ -10158,7 +10158,7 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 	// Uncomment to prevent status adding hp to gvg mob (like bloodylust=hp*3 etc...
 	//	if (bl->type == BL_MOB)
 	//		if (util::vector_exists(status_get_race2(bl), RC2_GVG) &&
-	//status_sc2scb_flag(type)&SCB_MAXHP) return 0;
+	// status_sc2scb_flag(type)&SCB_MAXHP) return 0;
 
 	// Fail if Madogear is active
 	if (sc->option & OPTION_MADOGEAR && flag & SCSTART_NOAVOID && scdb->flag[SCF_FAILEDMADO])

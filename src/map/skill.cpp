@@ -1460,7 +1460,7 @@ int skill_additional_effect(struct block_list *src, struct block_list *bl, uint1
 										SCSTART_NONE, 100);
 			}
 			//"While the damage can be blocked by Pneuma, the chance to break armor remains",
-			//irowiki. [Cydh]
+			// irowiki. [Cydh]
 			if (dmg_lv == ATK_BLOCK && skill_id == AM_ACIDTERROR) {
 				sc_start2(src, bl, SC_BLEEDING, (skill_lv * 3), skill_lv, src->id,
 						  skill_get_time2(skill_id, skill_lv));
@@ -3871,7 +3871,7 @@ int64 skill_attack(int attack_type, struct block_list *src, struct block_list *d
 	nullpo_ret(src);   // Source is the master behind the attack (player/mob/pet)
 	nullpo_ret(dsrc);  // dsrc is the actual originator of the damage, can be the same as src, or a
 					   // skill casted by src.
-	nullpo_ret(bl);	 // Target to be attacked.
+	nullpo_ret(bl);	   // Target to be attacked.
 
 	if (status_bl_has_mode(bl, MD_SKILLIMMUNE) ||
 		(status_get_class(bl) == MOBID_EMPERIUM && !skill_get_inf2(skill_id, INF2_TARGETEMPERIUM)))
@@ -4152,7 +4152,7 @@ int64 skill_attack(int attack_type, struct block_list *src, struct block_list *d
 				dmg.blewcount = 10;
 			dmg.amotion = 0;  // Disable delay or attack will do no damage since source is dead by
 							  // the time it takes effect. [Skotlex]
-			// fall through
+							  // fall through
 		case KN_AUTOCOUNTER:
 		case NPC_CRITICALSLASH:
 		case TF_DOUBLE:
@@ -6561,7 +6561,7 @@ int skill_castend_damage_id(struct block_list *src, struct block_list *bl, uint1
 		} break;
 		case CH_PALMSTRIKE:	 //	Palm Strike takes effect 1sec after casting. [Skotlex]
 			//	clif_skill_nodamage(src,bl,skill_id,skill_lv,0); //Can't make this one display the
-			//correct attack animation delay :/
+			// correct attack animation delay :/
 			clif_damage(src, bl, tick, status_get_amotion(src), 0, -1, 1, DMG_ENDURE, 0,
 						false);	 // Display an absorbed damage attack.
 			skill_addtimerskill(src, tick + (1000 + status_get_amotion(src)), bl->id, 0, 0,
@@ -10457,7 +10457,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 				if (skill_lv >= 10) {
 					spellid = MG_FROSTDIVER;
 					//				if (tsc && tsc->data[SC_SPIRIT] && tsc->data[SC_SPIRIT]->val2 ==
-					//SA_SAGE) 					maxlv = 10; 				else
+					// SA_SAGE) 					maxlv = 10; 				else
 					maxlv = skill_lv - 9;
 				} else if (skill_lv >= 8) {
 					spellid = MG_FIREBALL;
@@ -13335,7 +13335,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 					// message when switching fighting style 	char output[128];
 					//	safesnprintf(output,sizeof(output),msg_txt(sd,378),(sce->val1==MH_MD_FIGHTING?"fighthing":"grappling"));
 					//	clif_messagecolor(&hd->master->bl, color_table[COLOR_RED], output, false,
-					//SELF);
+					// SELF);
 					//}
 				} else
 					sc_start(&hd->bl, &hd->bl, SC_STYLE_CHANGE, 100, MH_MD_FIGHTING, INFINITE_TICK);
@@ -17892,8 +17892,8 @@ int skill_unit_onleft(uint16 skill_id, struct block_list *bl, t_tick tick) {
 				// FIXME: This code is not perfect, it doesn't checks for the real ensemble's owner,
 				// it only checks if you are doing the same ensemble. So if there's two chars doing
 				// an ensemble which overlaps, by stepping outside of the other parther's ensemble
-				// will cause you to cancel your own. Let's pray that scenario is pretty unlikely and
-				// noone will complain too much about it.
+				// will cause you to cancel your own. Let's pray that scenario is pretty unlikely
+				// and noone will complain too much about it.
 				status_change_end(bl, SC_DANCING);
 			}
 		case MH_STEINWAND:
@@ -18424,8 +18424,8 @@ bool skill_check_condition_castbegin(struct map_session_data *sd, uint16 skill_i
 									  // use items without them being consumed! [Skotlex]
 		sd->state.arrow_atk = skill_get_ammotype(skill_id) ? 1 : 0;	 // Need to do arrow state
 																	 // check.
-		sd->spiritball_old = sd->spiritball;	// Need to do Spiritball check.
-		sd->soulball_old = sd->soulball;		// Need to do Soulball check.
+		sd->spiritball_old = sd->spiritball;						 // Need to do Spiritball check.
+		sd->soulball_old = sd->soulball;							 // Need to do Soulball check.
 		sd->servantball_old = sd->servantball;	// Need to do Servantball check.
 		sd->abyssball_old = sd->abyssball;		// Need to do Abyssball check.
 		return true;
@@ -18635,7 +18635,7 @@ bool skill_check_condition_castbegin(struct map_session_data *sd, uint16 skill_i
 			break;
 		case MO_EXTREMITYFIST:
 			//		if(sc && sc->data[SC_EXTREMITYFIST]) //To disable Asura during the 5 min skill
-			//block uncomment this... 			return false;
+			// block uncomment this... 			return false;
 			if (sc && (sc->data[SC_BLADESTOP] || sc->data[SC_CURSEDCIRCLE_ATKER]))
 				break;
 			if (sc && sc->data[SC_COMBO]) {
@@ -19525,8 +19525,8 @@ bool skill_check_condition_castend(struct map_session_data *sd, uint16 skill_id,
 		// consumed! [Skotlex]
 		sd->state.arrow_atk = skill_get_ammotype(skill_id) ? 1 : 0;	 // Need to do arrow state
 																	 // check.
-		sd->spiritball_old = sd->spiritball;	// Need to do Spiritball check.
-		sd->soulball_old = sd->soulball;		// Need to do Soulball check.
+		sd->spiritball_old = sd->spiritball;						 // Need to do Spiritball check.
+		sd->soulball_old = sd->soulball;							 // Need to do Soulball check.
 		sd->servantball_old = sd->servantball;	// Need to do Servantball check.
 		sd->abyssball_old = sd->abyssball;		// Need to do Abyssball check.
 		return true;
@@ -22928,7 +22928,7 @@ void skill_unit_move_unit_group(std::shared_ptr<s_skill_unit_group> group, int16
 	//    m_flag
 	//		0: Neither of the following (skill_unit_onplace & skill_unit_onout are needed)
 	//		1: Unit will move to a slot that had another unit of the same group (skill_unit_onplace
-	//not needed) 		2: Another unit from same group will end up positioned on this unit
+	// not needed) 		2: Another unit from same group will end up positioned on this unit
 	//(skill_unit_onout not needed) 		3: Both 1+2.
 	for (i = 0; i < group->unit_count; i++) {
 		unit1 = &group->unit[i];
