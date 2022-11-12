@@ -8,27 +8,27 @@
 
 // Required constant and structure definitions
 #define MAX_GUILD_SKILL_REQUIRE 5
-#define MAX_SKILL_ITEM_REQUIRE	10
+#define MAX_SKILL_ITEM_REQUIRE 10
 #define MAX_SKILL_STATUS_REQUIRE 3
 #define MAX_SKILL_EQUIP_REQUIRE 10
 #define MAX_QUEST_DROPS 3
 #define MAX_MAP_PER_INSTANCE 255
-#define MAX_ARROW_RESULT		5 /// Max Arrow results/created
-#define MAX_SKILL_ARROW_DB		150 /// Max Arrow Creation DB
+#define MAX_ARROW_RESULT 5		/// Max Arrow results/created
+#define MAX_SKILL_ARROW_DB 150	/// Max Arrow Creation DB
 #define MAX_ITEMRATIO_MOBS 10
-//Update this max as necessary. 55 is the value needed for Super Baby currently
-//Raised to 105 since Expanded Super Baby needs it.
+// Update this max as necessary. 55 is the value needed for Super Baby currently
+// Raised to 105 since Expanded Super Baby needs it.
 #define MAX_SKILL_TREE 105
-#define MAX_PC_SKILL_REQUIRE 5 /// Max skill tree requirement
-///Maximum amount of items a combo may require
+#define MAX_PC_SKILL_REQUIRE 5	/// Max skill tree requirement
+/// Maximum amount of items a combo may require
 #define MAX_ITEMS_PER_COMBO 6
 
 struct s_skill_tree_entry_csv {
 	std::string skill_name;
 	uint16 skill_id, skill_lv, baselv, joblv;
-	std::map<std::string, uint16> need;	/// skill_id, skill_lv
+	std::map<std::string, uint16> need;	 /// skill_id, skill_lv
 };
-std::map<uint16, std::vector<s_skill_tree_entry_csv>> skill_tree;	/// job id (for order), entry
+std::map<uint16, std::vector<s_skill_tree_entry_csv>> skill_tree;  /// job id (for order), entry
 
 // Database to memory maps
 struct s_skill_unit_csv : s_skill_db {
@@ -91,8 +91,7 @@ struct s_randomsummon_entry_csv2yaml {
 };
 
 struct s_randomsummon_group_csv2yaml {
-	std::string group_name,
-		default_mob;
+	std::string group_name, default_mob;
 	std::vector<std::shared_ptr<s_randomsummon_entry_csv2yaml>> list;
 };
 
@@ -100,12 +99,9 @@ std::map<std::string, s_randomsummon_group_csv2yaml> summon_group;
 
 struct s_item_group_entry_csv2yaml {
 	std::string item_name;
-	uint16 duration,
-		amount;
+	uint16 duration, amount;
 	uint32 rate;
-	bool isAnnounced,
-		GUID,
-		isNamed;
+	bool isAnnounced, GUID, isNamed;
 	std::string bound;
 };
 
@@ -134,8 +130,7 @@ std::unordered_map<int, s_job_param> job_param;
 std::unordered_map<int, int> exp_base_level, exp_job_level;
 
 struct s_elemental_skill_csv {
-	std::string skill_name,
-		mode_name;
+	std::string skill_name, mode_name;
 	uint16 lv;
 };
 
@@ -148,70 +143,70 @@ struct s_mercenary_skill_csv {
 
 std::unordered_map<uint16, std::vector<s_mercenary_skill_csv>> mercenary_skill_tree;
 
-static std::map<std::string, int> um_mapid2jobname {
-	{ "Novice", JOB_NOVICE }, // Novice and Super Novice share the same value
-	{ "SuperNovice", JOB_NOVICE },
-	{ "Swordman", JOB_SWORDMAN },
-	{ "Mage", JOB_MAGE },
-	{ "Archer", JOB_ARCHER },
-	{ "Acolyte", JOB_ACOLYTE },
-	{ "Merchant", JOB_MERCHANT },
-	{ "Thief", JOB_THIEF },
-	{ "Knight", JOB_KNIGHT },
-	{ "Priest", JOB_PRIEST },
-	{ "Wizard", JOB_WIZARD },
-	{ "Blacksmith", JOB_BLACKSMITH },
-	{ "Hunter", JOB_HUNTER },
-	{ "Assassin", JOB_ASSASSIN },
-	{ "Crusader", JOB_CRUSADER },
-	{ "Monk", JOB_MONK },
-	{ "Sage", JOB_SAGE },
-	{ "Rogue", JOB_ROGUE },
-	{ "Alchemist", JOB_ALCHEMIST },
-	{ "BardDancer", JOB_BARD }, // Bard and Dancer share the same value
-	{ "BardDancer", JOB_DANCER },
-	{ "Gunslinger", JOB_GUNSLINGER },
-	{ "Ninja", JOB_NINJA },
-	{ "Taekwon", 21 },
-	{ "StarGladiator", 22 },
-	{ "SoulLinker", 23 },
+static std::map<std::string, int> um_mapid2jobname{
+	{"Novice", JOB_NOVICE},	 // Novice and Super Novice share the same value
+	{"SuperNovice", JOB_NOVICE},
+	{"Swordman", JOB_SWORDMAN},
+	{"Mage", JOB_MAGE},
+	{"Archer", JOB_ARCHER},
+	{"Acolyte", JOB_ACOLYTE},
+	{"Merchant", JOB_MERCHANT},
+	{"Thief", JOB_THIEF},
+	{"Knight", JOB_KNIGHT},
+	{"Priest", JOB_PRIEST},
+	{"Wizard", JOB_WIZARD},
+	{"Blacksmith", JOB_BLACKSMITH},
+	{"Hunter", JOB_HUNTER},
+	{"Assassin", JOB_ASSASSIN},
+	{"Crusader", JOB_CRUSADER},
+	{"Monk", JOB_MONK},
+	{"Sage", JOB_SAGE},
+	{"Rogue", JOB_ROGUE},
+	{"Alchemist", JOB_ALCHEMIST},
+	{"BardDancer", JOB_BARD},  // Bard and Dancer share the same value
+	{"BardDancer", JOB_DANCER},
+	{"Gunslinger", JOB_GUNSLINGER},
+	{"Ninja", JOB_NINJA},
+	{"Taekwon", 21},
+	{"StarGladiator", 22},
+	{"SoulLinker", 23},
 //	{ "Gangsi", 26 },
 //	{ "DeathKnight", 27 },
 //	{ "DarkCollector", 28 },
 #ifdef RENEWAL
-	{ "KagerouOboro", 29 }, // Kagerou and Oboro share the same value
-	{ "Rebellion", 30 },
-	{ "Summoner", 31 },
+	{"KagerouOboro", 29},  // Kagerou and Oboro share the same value
+	{"Rebellion", 30},
+	{"Summoner", 31},
 #endif
 };
 
-static std::unordered_map<std::string, equip_pos> um_equipnames {
-	{ "Head_Low", EQP_HEAD_LOW },
-	{ "Head_Mid", EQP_HEAD_MID },
-	{ "Head_Top", EQP_HEAD_TOP },
-	{ "Right_Hand", EQP_HAND_R },
-	{ "Left_Hand", EQP_HAND_L },
-	{ "Armor", EQP_ARMOR },
-	{ "Shoes", EQP_SHOES },
-	{ "Garment", EQP_GARMENT },
-	{ "Right_Accessory", EQP_ACC_R },
-	{ "Left_Accessory", EQP_ACC_L },
-	{ "Costume_Head_Top", EQP_COSTUME_HEAD_TOP },
-	{ "Costume_Head_Mid", EQP_COSTUME_HEAD_MID },
-	{ "Costume_Head_Low", EQP_COSTUME_HEAD_LOW },
-	{ "Costume_Garment", EQP_COSTUME_GARMENT },
-	{ "Ammo", EQP_AMMO },
-	{ "Shadow_Armor", EQP_SHADOW_ARMOR },
-	{ "Shadow_Weapon", EQP_SHADOW_WEAPON },
-	{ "Shadow_Shield", EQP_SHADOW_SHIELD },
-	{ "Shadow_Shoes", EQP_SHADOW_SHOES },
-	{ "Shadow_Right_Accessory", EQP_SHADOW_ACC_R },
-	{ "Shadow_Left_Accessory", EQP_SHADOW_ACC_L },
+static std::unordered_map<std::string, equip_pos> um_equipnames{
+	{"Head_Low", EQP_HEAD_LOW},
+	{"Head_Mid", EQP_HEAD_MID},
+	{"Head_Top", EQP_HEAD_TOP},
+	{"Right_Hand", EQP_HAND_R},
+	{"Left_Hand", EQP_HAND_L},
+	{"Armor", EQP_ARMOR},
+	{"Shoes", EQP_SHOES},
+	{"Garment", EQP_GARMENT},
+	{"Right_Accessory", EQP_ACC_R},
+	{"Left_Accessory", EQP_ACC_L},
+	{"Costume_Head_Top", EQP_COSTUME_HEAD_TOP},
+	{"Costume_Head_Mid", EQP_COSTUME_HEAD_MID},
+	{"Costume_Head_Low", EQP_COSTUME_HEAD_LOW},
+	{"Costume_Garment", EQP_COSTUME_GARMENT},
+	{"Ammo", EQP_AMMO},
+	{"Shadow_Armor", EQP_SHADOW_ARMOR},
+	{"Shadow_Weapon", EQP_SHADOW_WEAPON},
+	{"Shadow_Shield", EQP_SHADOW_SHIELD},
+	{"Shadow_Shoes", EQP_SHADOW_SHOES},
+	{"Shadow_Right_Accessory", EQP_SHADOW_ACC_R},
+	{"Shadow_Left_Accessory", EQP_SHADOW_ACC_L},
 };
 
 // Initialize Random Option constants
 void init_random_option_constants() {
-	#define export_constant2(a, b) script_set_constant_(a, b, a, false, false)
+#define export_constant2(a, b) script_set_constant_(a, b, a, false, false)
 
 	export_constant2("RDMOPT_VAR_MAXHPAMOUNT", 1);
 	export_constant2("RDMOPT_VAR_MAXSPAMOUNT", 2);
@@ -451,15 +446,15 @@ void init_random_option_constants() {
 	export_constant2("RDMOPT_ADDEXPPERCENT_KILLRACE_DRAGON", 241);
 	export_constant2("RDMOPT_ADDEXPPERCENT_KILLRACE_ALL", 242);
 
-	#undef export_constant2
+#undef export_constant2
 }
 
-static bool guild_read_guildskill_tree_db( char* split[], int columns, int current );
-static bool pet_read_db( const char* file );
-static bool skill_parse_row_magicmushroomdb(char *split[], int column, int current);
+static bool guild_read_guildskill_tree_db(char* split[], int columns, int current);
+static bool pet_read_db(const char* file);
+static bool skill_parse_row_magicmushroomdb(char* split[], int column, int current);
 static bool skill_parse_row_abradb(char* split[], int columns, int current);
 static bool skill_parse_row_spellbookdb(char* split[], int columns, int current);
-static bool mob_readdb_mobavail(char *str[], int columns, int current);
+static bool mob_readdb_mobavail(char* str[], int columns, int current);
 static bool skill_parse_row_requiredb(char* split[], int columns, int current);
 static bool skill_parse_row_castdb(char* split[], int columns, int current);
 static bool skill_parse_row_castnodexdb(char* split[], int columns, int current);
@@ -467,18 +462,18 @@ static bool skill_parse_row_unitdb(char* split[], int columns, int current);
 static bool skill_parse_row_copyabledb(char* split[], int columns, int current);
 static bool skill_parse_row_nonearnpcrangedb(char* split[], int columns, int current);
 static bool skill_parse_row_skilldb(char* split[], int columns, int current);
-static bool quest_read_db(char *split[], int columns, int current);
+static bool quest_read_db(char* split[], int columns, int current);
 static bool instance_readdb_sub(char* str[], int columns, int current);
-static bool itemdb_read_itemavail(char *str[], int columns, int current);
+static bool itemdb_read_itemavail(char* str[], int columns, int current);
 static bool itemdb_read_buyingstore(char* fields[], int columns, int current);
 static bool itemdb_read_flag(char* fields[], int columns, int current);
 static bool itemdb_read_itemdelay(char* str[], int columns, int current);
 static bool itemdb_read_stack(char* fields[], int columns, int current);
 static bool itemdb_read_nouse(char* fields[], int columns, int current);
 static bool itemdb_read_itemtrade(char* fields[], int columns, int current);
-static bool itemdb_read_db(const char *file);
+static bool itemdb_read_db(const char* file);
 static bool itemdb_read_randomopt(const char* file);
-static bool itemdb_read_randomopt_group(char *str[], int columns, int current);
+static bool itemdb_read_randomopt_group(char* str[], int columns, int current);
 static bool itemdb_randomopt_group_yaml(void);
 static bool pc_readdb_levelpenalty(char* fields[], int columns, int current);
 static bool pc_levelpenalty_yaml();
@@ -495,15 +490,15 @@ static bool itemdb_read_group_yaml(void);
 static bool mob_readdb_itemratio(char* fields[], int columns, int current);
 static bool status_readdb_attrfix(const char* file);
 static bool read_constdb(char* fields[], int columns, int current);
-static bool mob_readdb_race2(char *fields[], int columns, int current);
-static bool mob_readdb_drop(char *str[], int columns, int current);
-static bool mob_readdb_sub(char *fields[], int columns, int current);
-static bool pc_readdb_job2(char *fields[], int columns, int current);
-static bool pc_readdb_job_param(char *fields[], int columns, int current);
-static bool pc_readdb_job_exp(char *fields[], int columns, int current);
-static bool pc_readdb_job_exp_sub(char *fields[], int columns, int current);
-static bool pc_readdb_job_basehpsp(char *fields[], int columns, int current);
-static bool pc_readdb_job1(char *fields[], int columns, int current);
+static bool mob_readdb_race2(char* fields[], int columns, int current);
+static bool mob_readdb_drop(char* str[], int columns, int current);
+static bool mob_readdb_sub(char* fields[], int columns, int current);
+static bool pc_readdb_job2(char* fields[], int columns, int current);
+static bool pc_readdb_job_param(char* fields[], int columns, int current);
+static bool pc_readdb_job_exp(char* fields[], int columns, int current);
+static bool pc_readdb_job_exp_sub(char* fields[], int columns, int current);
+static bool pc_readdb_job_basehpsp(char* fields[], int columns, int current);
+static bool pc_readdb_job1(char* fields[], int columns, int current);
 static bool read_elemental_skilldb(char* str[], int columns, int current);
 static bool read_elementaldb(char* str[], int columns, int current);
 static bool mercenary_read_skilldb(char* str[], int columns, int current);

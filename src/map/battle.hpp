@@ -9,121 +9,136 @@
 #include "../common/cbasetypes.hpp"
 #include "../common/mmo.hpp"
 #include "../config/core.hpp"
-
-#include "map.hpp" //ELE_MAX
+#include "map.hpp"	//ELE_MAX
 #include "skill.hpp"
 
-//fwd declaration
+// fwd declaration
 struct map_session_data;
 struct mob_data;
 struct block_list;
 enum e_damage_type : uint8;
 
-
 /// State of a single attack attempt; used in flee/def penalty calculations when mobbed
 enum damage_lv : uint8 {
-	ATK_NONE,    /// Not an attack
-	ATK_LUCKY,   /// Attack was lucky-dodged
-	ATK_FLEE,    /// Attack was dodged
-	ATK_MISS,    /// Attack missed because of element/race modifier.
-	ATK_BLOCK,   /// Attack was blocked by some skills.
-	ATK_DEF      /// Attack connected
+	ATK_NONE,	/// Not an attack
+	ATK_LUCKY,	/// Attack was lucky-dodged
+	ATK_FLEE,	/// Attack was dodged
+	ATK_MISS,	/// Attack missed because of element/race modifier.
+	ATK_BLOCK,	/// Attack was blocked by some skills.
+	ATK_DEF		/// Attack connected
 };
 
 /// Flag of the final calculation
 enum e_battle_flag : uint16 {
-	BF_NONE		= 0x0000, /// None
-	BF_WEAPON	= 0x0001, /// Weapon attack
-	BF_MAGIC	= 0x0002, /// Magic attack
-	BF_MISC		= 0x0004, /// Misc attack
+	BF_NONE = 0x0000,	 /// None
+	BF_WEAPON = 0x0001,	 /// Weapon attack
+	BF_MAGIC = 0x0002,	 /// Magic attack
+	BF_MISC = 0x0004,	 /// Misc attack
 
-	BF_SHORT	= 0x0010, /// Short attack
-	BF_LONG		= 0x0040, /// Long attack
+	BF_SHORT = 0x0010,	/// Short attack
+	BF_LONG = 0x0040,	/// Long attack
 
-	BF_SKILL	= 0x0100, /// Skill attack
-	BF_NORMAL	= 0x0200, /// Normal attack
+	BF_SKILL = 0x0100,	 /// Skill attack
+	BF_NORMAL = 0x0200,	 /// Normal attack
 
-	BF_WEAPONMASK	= BF_WEAPON|BF_MAGIC|BF_MISC, /// Weapon attack mask
-	BF_RANGEMASK	= BF_SHORT|BF_LONG, /// Range attack mask
-	BF_SKILLMASK	= BF_SKILL|BF_NORMAL, /// Skill attack mask
+	BF_WEAPONMASK = BF_WEAPON | BF_MAGIC | BF_MISC,	 /// Weapon attack mask
+	BF_RANGEMASK = BF_SHORT | BF_LONG,				 /// Range attack mask
+	BF_SKILLMASK = BF_SKILL | BF_NORMAL,			 /// Skill attack mask
 };
 
 /// Battle check target [Skotlex]
 enum e_battle_check_target : uint32 {
-	BCT_NOONE		= 0x000000, ///< No one
-	BCT_SELF		= 0x010000, ///< Self
-	BCT_ENEMY		= 0x020000, ///< Enemy
-	BCT_PARTY		= 0x040000, ///< Party members
-	BCT_GUILDALLY	= 0x080000, ///< Only allies, NOT guildmates
-	BCT_NEUTRAL		= 0x100000, ///< Neutral target
-	BCT_SAMEGUILD	= 0x200000, ///< Guildmates, No Guild Allies
+	BCT_NOONE = 0x000000,	   ///< No one
+	BCT_SELF = 0x010000,	   ///< Self
+	BCT_ENEMY = 0x020000,	   ///< Enemy
+	BCT_PARTY = 0x040000,	   ///< Party members
+	BCT_GUILDALLY = 0x080000,  ///< Only allies, NOT guildmates
+	BCT_NEUTRAL = 0x100000,	   ///< Neutral target
+	BCT_SAMEGUILD = 0x200000,  ///< Guildmates, No Guild Allies
 
-	BCT_ALL			= 0x3F0000, ///< All targets
+	BCT_ALL = 0x3F0000,	 ///< All targets
 
-	BCT_WOS			= 0x400000, ///< Except self (currently used for skipping if src == bl in skill_area_sub)
-	BCT_GUILD		= BCT_SAMEGUILD|BCT_GUILDALLY,	///< Guild AND Allies (BCT_SAMEGUILD|BCT_GUILDALLY)
-	BCT_NOGUILD		= BCT_ALL&~BCT_GUILD,			///< Except guildmates
-	BCT_NOPARTY		= BCT_ALL&~BCT_PARTY,			///< Except party members
-	BCT_NOENEMY		= BCT_ALL&~BCT_ENEMY,			///< Except enemy
-	BCT_ALLY		= BCT_PARTY|BCT_GUILD,
-	BCT_FRIEND		= BCT_NOENEMY,
+	BCT_WOS =
+		0x400000,  ///< Except self (currently used for skipping if src == bl in skill_area_sub)
+	BCT_GUILD = BCT_SAMEGUILD | BCT_GUILDALLY,	///< Guild AND Allies (BCT_SAMEGUILD|BCT_GUILDALLY)
+	BCT_NOGUILD = BCT_ALL & ~BCT_GUILD,			///< Except guildmates
+	BCT_NOPARTY = BCT_ALL & ~BCT_PARTY,			///< Except party members
+	BCT_NOENEMY = BCT_ALL & ~BCT_ENEMY,			///< Except enemy
+	BCT_ALLY = BCT_PARTY | BCT_GUILD,
+	BCT_FRIEND = BCT_NOENEMY,
 };
 
 /// Damage structure
 struct Damage {
 #ifdef RENEWAL
-	int64 statusAtk, statusAtk2, weaponAtk, weaponAtk2, equipAtk, equipAtk2, masteryAtk, masteryAtk2, percentAtk, percentAtk2;
+	int64 statusAtk, statusAtk2, weaponAtk, weaponAtk2, equipAtk, equipAtk2, masteryAtk,
+		masteryAtk2, percentAtk, percentAtk2;
 #endif
-	int64 damage, /// Right hand damage
-		damage2; /// Left hand damage
-	enum e_damage_type type; /// Check clif_damage for type
-	short div_; /// Number of hit
-	int amotion,
-		dmotion;
-	int blewcount; /// Number of knockback
-	int flag; /// chk e_battle_flag
+	int64 damage,			  /// Right hand damage
+		damage2;			  /// Left hand damage
+	enum e_damage_type type;  /// Check clif_damage for type
+	short div_;				  /// Number of hit
+	int amotion, dmotion;
+	int blewcount;	/// Number of knockback
+	int flag;		/// chk e_battle_flag
 	int miscflag;
-	enum damage_lv dmg_lv; /// ATK_LUCKY,ATK_FLEE,ATK_DEF
-	bool isspdamage; /// Display blue damage numbers in clif_damage
+	enum damage_lv dmg_lv;	/// ATK_LUCKY,ATK_FLEE,ATK_DEF
+	bool isspdamage;		/// Display blue damage numbers in clif_damage
 };
 
 // Damage Calculation
 
-struct Damage battle_calc_attack(int attack_type,struct block_list *bl,struct block_list *target,uint16 skill_id,uint16 skill_lv,int flag);
+struct Damage battle_calc_attack(int attack_type, struct block_list *bl, struct block_list *target,
+								 uint16 skill_id, uint16 skill_lv, int flag);
 
-int64 battle_calc_return_damage(struct block_list *bl, struct block_list *src, int64 *, int flag, uint16 skill_id, bool status_reflect);
+int64 battle_calc_return_damage(struct block_list *bl, struct block_list *src, int64 *, int flag,
+								uint16 skill_id, bool status_reflect);
 
-void battle_drain(struct map_session_data *sd, struct block_list *tbl, int64 rdamage, int64 ldamage, int race, int class_);
+void battle_drain(struct map_session_data *sd, struct block_list *tbl, int64 rdamage, int64 ldamage,
+				  int race, int class_);
 
-int64 battle_attr_fix(struct block_list *src, struct block_list *target, int64 damage,int atk_elem,int def_type, int def_lv);
-int battle_calc_cardfix(int attack_type, struct block_list *src, struct block_list *target, std::bitset<NK_MAX> nk, int s_ele, int s_ele_, int64 damage, int left, int flag);
+int64 battle_attr_fix(struct block_list *src, struct block_list *target, int64 damage, int atk_elem,
+					  int def_type, int def_lv);
+int battle_calc_cardfix(int attack_type, struct block_list *src, struct block_list *target,
+						std::bitset<NK_MAX> nk, int s_ele, int s_ele_, int64 damage, int left,
+						int flag);
 
 // Final calculation Damage
-int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Damage *d,int64 damage,uint16 skill_id,uint16 skill_lv);
-int64 battle_calc_gvg_damage(struct block_list *src,struct block_list *bl,int64 damage,uint16 skill_id,int flag);
-int64 battle_calc_bg_damage(struct block_list *src,struct block_list *bl,int64 damage,uint16 skill_id,int flag);
-int64 battle_calc_pk_damage(block_list &src, block_list &bl, int64 damage, uint16 skill_id, int flag);
+int64 battle_calc_damage(struct block_list *src, struct block_list *bl, struct Damage *d,
+						 int64 damage, uint16 skill_id, uint16 skill_lv);
+int64 battle_calc_gvg_damage(struct block_list *src, struct block_list *bl, int64 damage,
+							 uint16 skill_id, int flag);
+int64 battle_calc_bg_damage(struct block_list *src, struct block_list *bl, int64 damage,
+							uint16 skill_id, int flag);
+int64 battle_calc_pk_damage(block_list &src, block_list &bl, int64 damage, uint16 skill_id,
+							int flag);
 
-void battle_damage(struct block_list *src, struct block_list *target, int64 damage, t_tick delay, uint16 skill_lv, uint16 skill_id, enum damage_lv dmg_lv, unsigned short attack_type, bool additional_effects, t_tick tick, bool spdamage);
-int battle_delay_damage (t_tick tick, int amotion, struct block_list *src, struct block_list *target, int attack_type, uint16 skill_id, uint16 skill_lv, int64 damage, enum damage_lv dmg_lv, t_tick ddelay, bool additional_effects, bool spdamage);
+void battle_damage(struct block_list *src, struct block_list *target, int64 damage, t_tick delay,
+				   uint16 skill_lv, uint16 skill_id, enum damage_lv dmg_lv,
+				   unsigned short attack_type, bool additional_effects, t_tick tick, bool spdamage);
+int battle_delay_damage(t_tick tick, int amotion, struct block_list *src, struct block_list *target,
+						int attack_type, uint16 skill_id, uint16 skill_lv, int64 damage,
+						enum damage_lv dmg_lv, t_tick ddelay, bool additional_effects,
+						bool spdamage);
 
 int battle_calc_chorusbonus(struct map_session_data *sd);
 
 // Summary normal attack treatment (basic attack)
-enum damage_lv battle_weapon_attack( struct block_list *bl,struct block_list *target,t_tick tick,int flag);
+enum damage_lv battle_weapon_attack(struct block_list *bl, struct block_list *target, t_tick tick,
+									int flag);
 
 // Accessors
-struct block_list* battle_get_master(struct block_list *src);
-struct block_list* battle_gettargeted(struct block_list *target);
-struct block_list* battle_getenemy(struct block_list *target, int type, int range);
+struct block_list *battle_get_master(struct block_list *src);
+struct block_list *battle_gettargeted(struct block_list *target);
+struct block_list *battle_getenemy(struct block_list *target, int type, int range);
 int battle_gettarget(struct block_list *bl);
 uint16 battle_getcurrentskill(struct block_list *bl);
 
-int battle_check_undead(int race,int element);
-int battle_check_target(struct block_list *src, struct block_list *target,int flag);
-bool battle_check_range(struct block_list *src,struct block_list *bl,int range);
+int battle_check_undead(int race, int element);
+int battle_check_target(struct block_list *src, struct block_list *target, int flag);
+bool battle_check_range(struct block_list *src, struct block_list *bl, int range);
 
-void battle_consume_ammo(struct map_session_data* sd, int skill, int lv);
+void battle_consume_ammo(struct map_session_data *sd, int skill, int lv);
 
 bool is_infinite_defense(struct block_list *target, int flag);
 
@@ -138,8 +153,7 @@ bool is_infinite_defense(struct block_list *target, int flag);
 #define MIN_BODY_STYLE battle_config.min_body_style
 #define MAX_BODY_STYLE battle_config.max_body_style
 
-struct Battle_Config
-{
+struct Battle_Config {
 	int warp_point_debug;
 	int enable_critical;
 	int mob_critical_rate;
@@ -153,15 +167,15 @@ struct Battle_Config
 	int skill_add_range;
 	int skill_out_range_consume;
 	int skill_amotion_leniency;
-	int skillrange_by_distance; //[Skotlex]
-	int use_weapon_skill_range; //[Skotlex]
+	int skillrange_by_distance;	 //[Skotlex]
+	int use_weapon_skill_range;	 //[Skotlex]
 	int pc_damage_delay_rate;
 	int defnotenemy;
 	int vs_traps_bctall;
 	int traps_setting;
-	int summon_flora; //[Skotlex]
-	int clear_unit_ondeath; //[Skotlex]
-	int clear_unit_onwarp; //[Skotlex]
+	int summon_flora;		 //[Skotlex]
+	int clear_unit_ondeath;	 //[Skotlex]
+	int clear_unit_onwarp;	 //[Skotlex]
 	int random_monster_checklv;
 	int attr_recover;
 	int item_auto_get;
@@ -172,10 +186,10 @@ struct Battle_Config
 	int mvp_item_first_get_time;
 	int mvp_item_second_get_time;
 	int mvp_item_third_get_time;
-	int base_exp_rate,job_exp_rate;
+	int base_exp_rate, job_exp_rate;
 	int drop_rate0item;
 	int death_penalty_type;
-	int death_penalty_base,death_penalty_job;
+	int death_penalty_base, death_penalty_job;
 	int pvp_exp;  // [MouseJstr]
 	int gtb_sc_immunity;
 	int zeny_penalty;
@@ -197,18 +211,18 @@ struct Battle_Config
 	int monster_active_enable;
 	int monster_damage_delay_rate;
 	int monster_loot_type;
-	int mob_skill_rate;	//[Skotlex]
-	int mob_skill_delay;	//[Skotlex]
+	int mob_skill_rate;	  //[Skotlex]
+	int mob_skill_delay;  //[Skotlex]
 	int mob_count_rate;
-	int no_spawn_on_player; //[Skotlex]
-	int force_random_spawn; //[Skotlex]
-	int mob_spawn_delay, plant_spawn_delay, boss_spawn_delay;	// [Skotlex]
+	int no_spawn_on_player;									   //[Skotlex]
+	int force_random_spawn;									   //[Skotlex]
+	int mob_spawn_delay, plant_spawn_delay, boss_spawn_delay;  // [Skotlex]
 	int slaves_inherit_mode;
 	int slaves_inherit_speed;
 	int summons_trigger_autospells;
-	int pc_walk_delay_rate; //Adjusts can't walk delay after being hit for players. [Skotlex]
-	int walk_delay_rate; //Adjusts can't walk delay after being hit. [Skotlex]
-	int multihit_delay;  //Adjusts can't walk delay per hit on multi-hitting skills. [Skotlex]
+	int pc_walk_delay_rate;	 // Adjusts can't walk delay after being hit for players. [Skotlex]
+	int walk_delay_rate;	 // Adjusts can't walk delay after being hit. [Skotlex]
+	int multihit_delay;		 // Adjusts can't walk delay per hit on multi-hitting skills. [Skotlex]
 	int quest_skill_learn;
 	int quest_skill_reset;
 	int basic_skill_check;
@@ -229,15 +243,15 @@ struct Battle_Config
 	int pet_status_support;
 	int pet_attack_support;
 	int pet_damage_support;
-	int pet_support_min_friendly;	//[Skotlex]
+	int pet_support_min_friendly;  //[Skotlex]
 	int pet_support_rate;
 	int pet_attack_exp_to_master;
 	int pet_attack_exp_rate;
-	int pet_lv_rate; //[Skotlex]
-	int pet_max_stats; //[Skotlex]
-	int pet_max_atk1; //[Skotlex]
-	int pet_max_atk2; //[Skotlex]
-	int pet_no_gvg; //Disables pets in gvg. [Skotlex]
+	int pet_lv_rate;	//[Skotlex]
+	int pet_max_stats;	//[Skotlex]
+	int pet_max_atk1;	//[Skotlex]
+	int pet_max_atk2;	//[Skotlex]
+	int pet_no_gvg;		// Disables pets in gvg. [Skotlex]
 	int pet_equip_required;
 	int pet_master_dead;
 
@@ -245,7 +259,7 @@ struct Battle_Config
 	int finger_offensive_type;
 	int heal_exp;
 	int max_heal_lv;
-	int max_heal; //Mitternacht
+	int max_heal;  // Mitternacht
 	int resurrection_exp;
 	int shop_exp;
 	int combo_delay_rate;
@@ -254,8 +268,8 @@ struct Battle_Config
 	int cashfood_use_interval;
 	int wedding_modifydisplay;
 	int wedding_ignorepalette;	//[Skotlex]
-	int xmas_ignorepalette;	// [Valaris]
-	int summer_ignorepalette; // [Zephyrus]
+	int xmas_ignorepalette;		// [Valaris]
+	int summer_ignorepalette;	// [Zephyrus]
 	int hanbok_ignorepalette;
 	int oktoberfest_ignorepalette;
 	int natural_healhp_interval;
@@ -267,7 +281,7 @@ struct Battle_Config
 	int ammo_unequip;
 	int ammo_check_weapon;
 	int max_aspd;
-	int max_walk_speed;	//Maximum walking speed after buffs [Skotlex]
+	int max_walk_speed;	 // Maximum walking speed after buffs [Skotlex]
 	int max_hp_lv99;
 	int max_hp_lv150;
 	int max_hp;
@@ -281,8 +295,8 @@ struct Battle_Config
 	int save_clothcolor;
 	int undead_detect_type;
 	int auto_counter_type;
-	int min_hitrate;	//[Skotlex]
-	int max_hitrate;	//[Skotlex]
+	int min_hitrate;  //[Skotlex]
+	int max_hitrate;  //[Skotlex]
 	int agi_penalty_target;
 	int agi_penalty_type;
 	int agi_penalty_count;
@@ -331,39 +345,40 @@ struct Battle_Config
 	int item_rate_mvp, item_rate_common, item_rate_common_boss, item_rate_card, item_rate_card_boss,
 		item_rate_equip, item_rate_equip_boss, item_rate_heal, item_rate_heal_boss, item_rate_use,
 		item_rate_use_boss, item_rate_treasure, item_rate_adddrop;
-	int item_rate_common_mvp, item_rate_heal_mvp, item_rate_use_mvp, item_rate_equip_mvp, item_rate_card_mvp;
+	int item_rate_common_mvp, item_rate_heal_mvp, item_rate_use_mvp, item_rate_equip_mvp,
+		item_rate_card_mvp;
 
 	int logarithmic_drops;
-	int item_drop_common_min,item_drop_common_max;	// Added by TyrNemesis^
-	int item_drop_card_min,item_drop_card_max;
-	int item_drop_equip_min,item_drop_equip_max;
-	int item_drop_mvp_min,item_drop_mvp_max;	// End Addition
-	int item_drop_mvp_mode; //rAthena addition [Playtester]
-	int item_drop_heal_min,item_drop_heal_max;	// Added by Valatris
-	int item_drop_use_min,item_drop_use_max;	//End
-	int item_drop_treasure_min,item_drop_treasure_max; //by [Skotlex]
-	int item_drop_adddrop_min,item_drop_adddrop_max; //[Skotlex]
+	int item_drop_common_min, item_drop_common_max;	 // Added by TyrNemesis^
+	int item_drop_card_min, item_drop_card_max;
+	int item_drop_equip_min, item_drop_equip_max;
+	int item_drop_mvp_min, item_drop_mvp_max;			 // End Addition
+	int item_drop_mvp_mode;								 // rAthena addition [Playtester]
+	int item_drop_heal_min, item_drop_heal_max;			 // Added by Valatris
+	int item_drop_use_min, item_drop_use_max;			 // End
+	int item_drop_treasure_min, item_drop_treasure_max;	 // by [Skotlex]
+	int item_drop_adddrop_min, item_drop_adddrop_max;	 //[Skotlex]
 
-	int prevent_logout;	// Added by RoVeRT
+	int prevent_logout;	 // Added by RoVeRT
 	int prevent_logout_trigger;
 	int land_protector_behavior;
 	int npc_emotion_behavior;
 
-	int alchemist_summon_reward;	// [Valaris]
+	int alchemist_summon_reward;  // [Valaris]
 	int drops_by_luk;
 	int drops_by_luk2;
-	int equip_natural_break_rate;	//Base Natural break rate for attacks.
-	int equip_self_break_rate; //Natural & Penalty skills break rate
-	int equip_skill_break_rate; //Offensive skills break rate
+	int equip_natural_break_rate;  // Base Natural break rate for attacks.
+	int equip_self_break_rate;	   // Natural & Penalty skills break rate
+	int equip_skill_break_rate;	   // Offensive skills break rate
 	int multi_level_up;
 	int multi_level_up_base;
 	int multi_level_up_job;
-	int max_exp_gain_rate; //Max amount of exp bar % you can get in one go.
+	int max_exp_gain_rate;	// Max amount of exp bar % you can get in one go.
 	int pk_mode;
 	int pk_mode_mes;
 	int pk_level_range;
 
-	int manner_system; // end additions [Valaris]
+	int manner_system;	// end additions [Valaris]
 	int show_mob_info;
 
 	int gx_allhit;
@@ -381,33 +396,33 @@ struct Battle_Config
 	int buyer_name;
 	int dancing_weaponswitch_fix;
 
-// eAthena additions
-	int night_at_start; // added by [Yor]
-	int day_duration; // added by [Yor]
-	int night_duration; // added by [Yor]
-	int ban_hack_trade; // added by [Yor]
+	// eAthena additions
+	int night_at_start;	 // added by [Yor]
+	int day_duration;	 // added by [Yor]
+	int night_duration;	 // added by [Yor]
+	int ban_hack_trade;	 // added by [Yor]
 
-	int min_hair_style; // added by [MouseJstr]
-	int max_hair_style; // added by [MouseJstr]
-	int min_hair_color; // added by [MouseJstr]
-	int max_hair_color; // added by [MouseJstr]
-	int min_cloth_color; // added by [MouseJstr]
-	int max_cloth_color; // added by [MouseJstr]
-	int pet_hair_style; // added by [Skotlex]
+	int min_hair_style;	  // added by [MouseJstr]
+	int max_hair_style;	  // added by [MouseJstr]
+	int min_hair_color;	  // added by [MouseJstr]
+	int max_hair_color;	  // added by [MouseJstr]
+	int min_cloth_color;  // added by [MouseJstr]
+	int max_cloth_color;  // added by [MouseJstr]
+	int pet_hair_style;	  // added by [Skotlex]
 
-	int castrate_dex_scale; // added by [MouseJstr]
-	int area_size; // added by [MouseJstr]
+	int castrate_dex_scale;	 // added by [MouseJstr]
+	int area_size;			 // added by [MouseJstr]
 
-	int max_def, over_def_bonus; //added by [Skotlex]
+	int max_def, over_def_bonus;  // added by [Skotlex]
 
-	int zeny_from_mobs; // [Valaris]
-	int mobs_level_up; // [Valaris]
-	int mobs_level_up_exp_rate; // [Valaris]
-	int pk_min_level; // [celest]
-	int skill_steal_max_tries; //max steal skill tries on a mob. if 0, then w/o limit [Lupus]
+	int zeny_from_mobs;			 // [Valaris]
+	int mobs_level_up;			 // [Valaris]
+	int mobs_level_up_exp_rate;	 // [Valaris]
+	int pk_min_level;			 // [celest]
+	int skill_steal_max_tries;	 // max steal skill tries on a mob. if 0, then w/o limit [Lupus]
 	int skill_steal_random_options;
-	int motd_type; // [celest]
-	int finding_ore_rate; // orn
+	int motd_type;		   // [celest]
+	int finding_ore_rate;  // orn
 	int exp_calc_type;
 	int exp_bonus_attacker;
 	int exp_bonus_max_attacker;
@@ -426,44 +441,49 @@ struct Battle_Config
 	int display_hallucination;	// [Skotlex]
 	int use_statpoint_table;	// [Skotlex]
 
-	int debuff_on_logout; // Removes a few "official" negative Scs on logout. [Skotlex]
-	int mob_ai; //Configures various mob_ai settings to make them smarter or dumber(official). [Skotlex]
-	int hom_setting; //Configures various homunc settings which make them behave unlike normal characters.. [Skotlex]
-	int dynamic_mobs; // Dynamic Mobs [Wizputer] - battle_athena flag implemented by [random]
-	int mob_remove_damaged; // Dynamic Mobs - Remove mobs even if damaged [Wizputer]
-	int mob_remove_delay; // Dynamic Mobs - delay before removing mobs from a map [Skotlex]
-	int mob_active_time; //Duration through which mobs execute their Hard AI after players leave their area of sight.
+	int debuff_on_logout;  // Removes a few "official" negative Scs on logout. [Skotlex]
+	int mob_ai;	 // Configures various mob_ai settings to make them smarter or dumber(official).
+				 // [Skotlex]
+	int hom_setting;   // Configures various homunc settings which make them behave unlike normal
+					   // characters.. [Skotlex]
+	int dynamic_mobs;  // Dynamic Mobs [Wizputer] - battle_athena flag implemented by [random]
+	int mob_remove_damaged;	 // Dynamic Mobs - Remove mobs even if damaged [Wizputer]
+	int mob_remove_delay;	 // Dynamic Mobs - delay before removing mobs from a map [Skotlex]
+	int mob_active_time;  // Duration through which mobs execute their Hard AI after players leave
+						  // their area of sight.
 	int boss_active_time;
 
 	int show_hp_sp_drain, show_hp_sp_gain;	//[Skotlex]
 
-	int mob_npc_event_type; //Determines on who the npc_event is executed. [Skotlex]
+	int mob_npc_event_type;	 // Determines on who the npc_event is executed. [Skotlex]
 
-	int character_size; // if riders have size=2, and baby class riders size=1 [Lupus]
-	int mob_max_skilllvl; // Max possible skill level [Lupus]
-	int rare_drop_announce; // chance <= to show rare drops global announces
-	int drop_rate_cap;  // Drop rate can't be raised above this amount by drop bonus items
+	int character_size;		 // if riders have size=2, and baby class riders size=1 [Lupus]
+	int mob_max_skilllvl;	 // Max possible skill level [Lupus]
+	int rare_drop_announce;	 // chance <= to show rare drops global announces
+	int drop_rate_cap;		 // Drop rate can't be raised above this amount by drop bonus items
 	int drop_rate_cap_vip;
 
-	int retaliate_to_master;	//Whether when a mob is attacked by another mob, it will retaliate versus the mob or the mob's master. [Skotlex]
+	int retaliate_to_master;  // Whether when a mob is attacked by another mob, it will retaliate
+							  // versus the mob or the mob's master. [Skotlex]
 
-	int duel_allow_pvp; // [LuzZza]
-	int duel_allow_gvg; // [LuzZza]
-	int duel_allow_teleport; // [LuzZza]
-	int duel_autoleave_when_die; // [LuzZza]
-	int duel_time_interval; // [LuzZza]
-	int duel_only_on_same_map; // [Toms]
+	int duel_allow_pvp;			  // [LuzZza]
+	int duel_allow_gvg;			  // [LuzZza]
+	int duel_allow_teleport;	  // [LuzZza]
+	int duel_autoleave_when_die;  // [LuzZza]
+	int duel_time_interval;		  // [LuzZza]
+	int duel_only_on_same_map;	  // [Toms]
 
-	int skip_teleport_lv1_menu; // possibility to disable (skip) Teleport Lv1 menu, that have only two lines `Random` and `Cancel` [LuzZza]
+	int skip_teleport_lv1_menu;	 // possibility to disable (skip) Teleport Lv1 menu, that have only
+								 // two lines `Random` and `Cancel` [LuzZza]
 
-	int allow_skill_without_day; // [Komurka]
-	int allow_es_magic_pc; // [Skotlex]
-	int skill_wall_check; // [Skotlex]
-	int official_cell_stack_limit; // [Playtester]
-	int custom_cell_stack_limit; // [Skotlex]
-	int skill_caster_check; // [Skotlex]
-	int sc_castcancel; // [Skotlex]
-	int pc_sc_def_rate; // [Skotlex]
+	int allow_skill_without_day;	// [Komurka]
+	int allow_es_magic_pc;			// [Skotlex]
+	int skill_wall_check;			// [Skotlex]
+	int official_cell_stack_limit;	// [Playtester]
+	int custom_cell_stack_limit;	// [Skotlex]
+	int skill_caster_check;			// [Skotlex]
+	int sc_castcancel;				// [Skotlex]
+	int pc_sc_def_rate;				// [Skotlex]
 	int mob_sc_def_rate;
 	int pc_max_sc_def;
 	int mob_max_sc_def;
@@ -471,13 +491,13 @@ struct Battle_Config
 	int sg_angel_skill_ratio;
 	int sg_miracle_skill_ratio;
 	int sg_miracle_skill_duration;
-	int autospell_stacking; //Enables autospell cards to stack. [Skotlex]
-	int override_mob_names; //Enables overriding spawn mob names with the mob_db names. [Skotlex]
-	int min_chat_delay; //Minimum time between client messages. [Skotlex]
-	int friend_auto_add; //When accepting friends, both get friended. [Skotlex]
-	int hvan_explosion_intimate;	// fix [albator]
+	int autospell_stacking;	 // Enables autospell cards to stack. [Skotlex]
+	int override_mob_names;	 // Enables overriding spawn mob names with the mob_db names. [Skotlex]
+	int min_chat_delay;		 // Minimum time between client messages. [Skotlex]
+	int friend_auto_add;	 // When accepting friends, both get friended. [Skotlex]
+	int hvan_explosion_intimate;  // fix [albator]
 	int hom_rename;
-	int homunculus_show_growth ;	//[orn]
+	int homunculus_show_growth;	 //[orn]
 	int homunculus_friendly_rate;
 	int quest_exp_rate;
 	int autotrade_mapflag;
@@ -488,15 +508,15 @@ struct Battle_Config
 	int ksprotection;
 	int auction_feeperhour;
 	int auction_maximumprice;
-	int homunculus_auto_vapor;	//Keep Homunculus from Vaporizing when master dies. [L0ne_W0lf]
-	int display_status_timers;	//Show or hide skill buff/delay timers in recent clients [Sara]
-	int skill_add_heal_rate;	//skills that bHealPower has effect on [Inkfish]
+	int homunculus_auto_vapor;	// Keep Homunculus from Vaporizing when master dies. [L0ne_W0lf]
+	int display_status_timers;	// Show or hide skill buff/delay timers in recent clients [Sara]
+	int skill_add_heal_rate;	// skills that bHealPower has effect on [Inkfish]
 	int eq_single_target_reflectable;
 	int invincible_nodamage;
 	int mob_slave_keep_target;
-	int autospell_check_range;	//Enable range check for autospell bonus. [L0ne_W0lf]
+	int autospell_check_range;	// Enable range check for autospell bonus. [L0ne_W0lf]
 	int knockback_left;
-	int client_reshuffle_dice;  // Reshuffle /dice
+	int client_reshuffle_dice;	// Reshuffle /dice
 	int client_sort_storage;
 	int feature_buying_store;
 	int feature_search_stores;
@@ -538,13 +558,15 @@ struct Battle_Config
 	int min_npc_vendchat_distance;
 	int atcommand_mobinfo_type;
 
-	int mob_size_influence; // Enable modifications on earned experience, drop rates and monster status depending on monster size. [mkbu95]
+	int mob_size_influence;	 // Enable modifications on earned experience, drop rates and monster
+							 // status depending on monster size. [mkbu95]
 	int skill_trap_type;
 	int allow_consume_restricted_item;
 	int allow_equip_restricted_item;
 	int max_walk_path;
 	int item_enabled_npc;
-	int item_onfloor; // Whether to drop an undroppable item on the map or destroy it if inventory is full.
+	int item_onfloor;  // Whether to drop an undroppable item on the map or destroy it if inventory
+					   // is full.
 	int bowling_bash_area;
 	int drop_rateincrease;
 	int feature_auction;
@@ -601,14 +623,14 @@ struct Battle_Config
 	int arrow_shower_knockback;
 	int devotion_rdamage_skill_only;
 	int max_extended_aspd;
-	int mob_chase_refresh; //How often a monster should refresh its chase [Playtester]
-	int mob_icewall_walk_block; //How a normal monster should be trapped in icewall [Playtester]
-	int boss_icewall_walk_block; //How a boss monster should be trapped in icewall [Playtester]
-	int snap_dodge; // Enable or disable dodging damage snapping away [csnv]
+	int mob_chase_refresh;		  // How often a monster should refresh its chase [Playtester]
+	int mob_icewall_walk_block;	  // How a normal monster should be trapped in icewall [Playtester]
+	int boss_icewall_walk_block;  // How a boss monster should be trapped in icewall [Playtester]
+	int snap_dodge;				  // Enable or disable dodging damage snapping away [csnv]
 	int stormgust_knockback;
 	int default_fixed_castrate;
 	int default_bind_on_equip;
-	int pet_ignore_infinite_def; // Makes fixed damage of petskillattack2 ignores infinite defense
+	int pet_ignore_infinite_def;  // Makes fixed damage of petskillattack2 ignores infinite defense
 	int homunculus_evo_intimacy_need;
 	int homunculus_evo_intimacy_reset;
 	int monster_loot_search_type;
@@ -617,22 +639,22 @@ struct Battle_Config
 	int min_body_style;
 	int max_body_style;
 	int save_body_style;
-	int mob_eye_range_bonus; //Vulture's Eye and Snake's Eye range bonus
-	int mob_stuck_warning; //Show warning if a monster is stuck too long
-	int skill_eightpath_algorithm; //Official path algorithm
+	int mob_eye_range_bonus;		// Vulture's Eye and Snake's Eye range bonus
+	int mob_stuck_warning;			// Show warning if a monster is stuck too long
+	int skill_eightpath_algorithm;	// Official path algorithm
 	int skill_eightpath_same_cell;
 	int death_penalty_maxlv;
 	int exp_cost_redemptio;
 	int exp_cost_redemptio_limit;
 	int mvp_exp_reward_message;
-	int can_damage_skill; //Which BL types can damage traps
+	int can_damage_skill;  // Which BL types can damage traps
 	int atcommand_levelup_events;
 	int atcommand_disable_npc;
 	int block_account_in_same_party;
-	int tarotcard_equal_chance; //Official or equal chance for each card
+	int tarotcard_equal_chance;	 // Official or equal chance for each card
 	int change_party_leader_samemap;
-	int dispel_song; //Can songs be dispelled?
-	int guild_maprespawn_clones; // Should clones be killed by maprespawnguildid?
+	int dispel_song;			  // Can songs be dispelled?
+	int guild_maprespawn_clones;  // Should clones be killed by maprespawnguildid?
 	int hide_fav_sell;
 	int mail_daily_count;
 	int mail_zeny_fee;
@@ -728,14 +750,15 @@ void do_init_battle(void);
 void do_final_battle(void);
 extern int battle_config_read(const char *cfgName);
 extern void battle_set_defaults(void);
-int battle_set_value(const char* w1, const char* w2);
-int battle_get_value(const char* w1);
+int battle_set_value(const char *w1, const char *w2);
+int battle_get_value(const char *w1);
 
 //
-struct block_list* battle_getenemyarea(struct block_list *src, int x, int y, int range, int type, int ignore_id);
+struct block_list *battle_getenemyarea(struct block_list *src, int x, int y, int range, int type,
+									   int ignore_id);
 /**
  * Royal Guard
  **/
-int battle_damage_area( struct block_list *bl, va_list ap);
+int battle_damage_area(struct block_list *bl, va_list ap);
 
 #endif /* BATTLE_HPP */

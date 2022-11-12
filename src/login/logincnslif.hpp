@@ -21,7 +21,7 @@ int cnslif_parse(const char* buf);
  * @param argv:
  * @return true or Exit on failure.
  */
-int logcnslif_get_options(int argc, char ** argv);
+int logcnslif_get_options(int argc, char** argv);
 
 /**
  * Initialize the module.
@@ -33,4 +33,4 @@ void do_init_logincnslif(void);
  */
 void do_final_logincnslif(void);
 
-#endif	/* LOGINCNSLIF_HPP */
+#endif /* LOGINCNSLIF_HPP */

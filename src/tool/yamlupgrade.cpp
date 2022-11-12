@@ -8,8 +8,9 @@ static bool upgrade_item_db(std::string file, const uint32 source_version);
 static bool upgrade_job_stats(std::string file, const uint32 source_version);
 static bool upgrade_status_db(std::string file, const uint32 source_version);
 
-template<typename Func>
-bool process(const std::string &type, uint32 version, const std::vector<std::string> &paths, const std::string &name, Func lambda) {
+template <typename Func>
+bool process(const std::string &type, uint32 version, const std::vector<std::string> &paths,
+			 const std::string &name, Func lambda) {
 	for (const std::string &path : paths) {
 		const std::string name_ext = name + ".yml";
 		const std::string from = path + "/" + name_ext;
@@ -25,12 +26,16 @@ bool process(const std::string &type, uint32 version, const std::vector<std::str
 				continue;
 			}
 
-			if (!askConfirmation("Found the file \"%s\", which requires an upgrade.\nDo you want to convert it now? (Y/N)\n", from.c_str())) {
+			if (!askConfirmation("Found the file \"%s\", which requires an upgrade.\nDo you want "
+								 "to convert it now? (Y/N)\n",
+								 from.c_str())) {
 				continue;
 			}
 
 			if (fileExists(to)) {
-				if (!askConfirmation("The file \"%s\" already exists.\nDo you want to replace it? (Y/N)\n", to.c_str())) {
+				if (!askConfirmation(
+						"The file \"%s\" already exists.\nDo you want to replace it? (Y/N)\n",
+						to.c_str())) {
 					continue;
 				}
 			}
@@ -70,7 +75,7 @@ bool process(const std::string &type, uint32 version, const std::vector<std::str
 	return true;
 }
 
-int do_init(int argc, char** argv) {
+int do_init(int argc, char **argv) {
 	const std::string path_db = std::string(db_path);
 	const std::string path_db_mode = path_db + "/" + DBPATH;
 	const std::string path_db_import = path_db + "/" + DBIMPORT;
@@ -85,55 +90,55 @@ int do_init(int argc, char** argv) {
 	if (fileExists(mob_db.getDefaultLocation())) {
 		mob_db.load();
 	} else {
-		sv_readdb(path_db_mode.c_str(), "mob_db.txt", ',', 31 + 2 * MAX_MVP_DROP + 2 * MAX_MOB_DROP, 31 + 2 * MAX_MVP_DROP + 2 * MAX_MOB_DROP, -1, &parse_mob_constants_txt, false);
-		sv_readdb(path_db_import.c_str(), "mob_db.txt", ',', 31 + 2 * MAX_MVP_DROP + 2 * MAX_MOB_DROP, 31 + 2 * MAX_MVP_DROP + 2 * MAX_MOB_DROP, -1, &parse_mob_constants_txt, false);
+		sv_readdb(path_db_mode.c_str(), "mob_db.txt", ',', 31 + 2 * MAX_MVP_DROP + 2 * MAX_MOB_DROP,
+				  31 + 2 * MAX_MVP_DROP + 2 * MAX_MOB_DROP, -1, &parse_mob_constants_txt, false);
+		sv_readdb(path_db_import.c_str(), "mob_db.txt", ',',
+				  31 + 2 * MAX_MVP_DROP + 2 * MAX_MOB_DROP,
+				  31 + 2 * MAX_MVP_DROP + 2 * MAX_MOB_DROP, -1, &parse_mob_constants_txt, false);
 	}
 	if (fileExists(skill_db.getDefaultLocation())) {
 		skill_db.load();
 	} else {
-		sv_readdb(path_db_mode.c_str(), "skill_db.txt", ',', 18, 18, -1, parse_skill_constants_txt, false);
-		sv_readdb(path_db_import.c_str(), "skill_db.txt", ',', 18, 18, -1, parse_skill_constants_txt, false);
+		sv_readdb(path_db_mode.c_str(), "skill_db.txt", ',', 18, 18, -1, parse_skill_constants_txt,
+				  false);
+		sv_readdb(path_db_import.c_str(), "skill_db.txt", ',', 18, 18, -1,
+				  parse_skill_constants_txt, false);
 	}
 
-	// Load constants
-	#define export_constant_npc(a) export_constant(a)
-	#include "../map/script_constants.hpp"
+// Load constants
+#define export_constant_npc(a) export_constant(a)
+#include "../map/script_constants.hpp"
 
-	std::vector<std::string> root_paths = {
-		path_db,
-		path_db_mode,
-		path_db_import
-	};
+	std::vector<std::string> root_paths = {path_db, path_db_mode, path_db_import};
 
-	if (!process("ACHIEVEMENT_DB", 2, root_paths, "achievement_db", [](const std::string &path, const std::string &name_ext, uint32 source_version) -> bool {
-		return upgrade_achievement_db(path + name_ext, source_version);
-	})) {
+	if (!process("ACHIEVEMENT_DB", 2, root_paths, "achievement_db",
+				 [](const std::string &path, const std::string &name_ext, uint32 source_version)
+					 -> bool { return upgrade_achievement_db(path + name_ext, source_version); })) {
 		return 0;
 	}
 
-	if (!process("ITEM_DB", 3, root_paths, "item_db", [](const std::string& path, const std::string& name_ext, uint32 source_version) -> bool {
-		return upgrade_item_db(path + name_ext, source_version);
-		})) {
+	if (!process("ITEM_DB", 3, root_paths, "item_db",
+				 [](const std::string &path, const std::string &name_ext, uint32 source_version)
+					 -> bool { return upgrade_item_db(path + name_ext, source_version); })) {
 		return 0;
 	}
 
-	if (!process("JOB_STATS", 2, root_paths, "job_stats", [](const std::string& path, const std::string& name_ext, uint32 source_version) -> bool {
-		return upgrade_job_stats(path + name_ext, source_version);
-		})) {
+	if (!process("JOB_STATS", 2, root_paths, "job_stats",
+				 [](const std::string &path, const std::string &name_ext, uint32 source_version)
+					 -> bool { return upgrade_job_stats(path + name_ext, source_version); })) {
 		return 0;
 	}
-	
-	if (!process("STATUS_DB", 3, root_paths, "status", [](const std::string& path, const std::string& name_ext, uint32 source_version) -> bool {
-		return upgrade_status_db(path + name_ext, source_version);
-		})) {
+
+	if (!process("STATUS_DB", 3, root_paths, "status",
+				 [](const std::string &path, const std::string &name_ext, uint32 source_version)
+					 -> bool { return upgrade_status_db(path + name_ext, source_version); })) {
 		return 0;
 	}
 
 	return 0;
 }
 
-void do_final(void) {
-}
+void do_final(void) {}
 
 // Implementation of the upgrade functions
 static bool upgrade_achievement_db(std::string file, const uint32 source_version) {
@@ -145,12 +150,12 @@ static bool upgrade_achievement_db(std::string file, const uint32 source_version
 
 		std::string constant = input["Group"].as<std::string>();
 
-		constant.erase(0, 3); // Remove "AG_"
-		if (constant.compare("Chat") == 0) // Chat -> Chatting
+		constant.erase(0, 3);				// Remove "AG_"
+		if (constant.compare("Chat") == 0)	// Chat -> Chatting
 			constant.insert(4, "ting");
 		else if (constant.compare("Hear") == 0 || constant.compare("See") == 0)
-			constant = "Chatting"; // Aegis treats these as general "Talk to NPC" achievements.
-		else if (constant.compare("Refine") == 0) { // Refine -> Enchant
+			constant = "Chatting";	// Aegis treats these as general "Talk to NPC" achievements.
+		else if (constant.compare("Refine") == 0) {	 // Refine -> Enchant
 			constant.erase(0, 6);
 			constant = "Enchant" + constant;
 		}
@@ -169,7 +174,8 @@ static bool upgrade_achievement_db(std::string file, const uint32 source_version
 					std::string *mob_name = util::umap_find(aegis_mobnames, mob_id);
 
 					if (mob_name == nullptr) {
-						ShowWarning("mob_avail reading: Invalid mob-class %hu, Mob not read.\n", mob_id);
+						ShowWarning("mob_avail reading: Invalid mob-class %hu, Mob not read.\n",
+									mob_id);
 						return false;
 					}
 
@@ -236,7 +242,9 @@ static bool upgrade_achievement_db(std::string file, const uint32 source_version
 		entries++;
 	}
 
-	ShowStatus("Done converting/upgrading '" CL_WHITE "%zu" CL_RESET "' achievements in '" CL_WHITE "%s" CL_RESET "'.\n", entries, file.c_str());
+	ShowStatus("Done converting/upgrading '" CL_WHITE "%zu" CL_RESET "' achievements in '" CL_WHITE
+			   "%s" CL_RESET "'.\n",
+			   entries, file.c_str());
 
 	return true;
 }
@@ -244,21 +252,24 @@ static bool upgrade_achievement_db(std::string file, const uint32 source_version
 static bool upgrade_item_db(std::string file, const uint32 source_version) {
 	size_t entries = 0;
 
-	for( auto input : inNode["Body"] ){
+	for (auto input : inNode["Body"]) {
 		// If under version 2
-		if( source_version < 2 ){
+		if (source_version < 2) {
 			// Add armor level to all equipments
-			if( input["Type"].IsDefined() && input["Type"].as<std::string>() == "Armor" ){
+			if (input["Type"].IsDefined() && input["Type"].as<std::string>() == "Armor") {
 				input["ArmorLevel"] = 1;
 			}
 		}
 
-		// TODO: this currently converts all scripts using Literal syntax to normal double quote strings
+		// TODO: this currently converts all scripts using Literal syntax to normal double quote
+		// strings
 		body << input;
 		entries++;
 	}
 
-	ShowStatus("Done converting/upgrading '" CL_WHITE "%zu" CL_RESET "' items in '" CL_WHITE "%s" CL_RESET "'.\n", entries, file.c_str());
+	ShowStatus("Done converting/upgrading '" CL_WHITE "%zu" CL_RESET "' items in '" CL_WHITE
+			   "%s" CL_RESET "'.\n",
+			   entries, file.c_str());
 
 	return true;
 }
@@ -296,7 +307,9 @@ static bool upgrade_job_stats(std::string file, const uint32 source_version) {
 		entries++;
 	}
 
-	ShowStatus("Done converting/upgrading '" CL_WHITE "%zu" CL_RESET "' job stats in '" CL_WHITE "%s" CL_RESET "'.\n", entries, file.c_str());
+	ShowStatus("Done converting/upgrading '" CL_WHITE "%zu" CL_RESET "' job stats in '" CL_WHITE
+			   "%s" CL_RESET "'.\n",
+			   entries, file.c_str());
 
 	return true;
 }
@@ -318,7 +331,9 @@ static bool upgrade_status_db(std::string file, const uint32 source_version) {
 		entries++;
 	}
 
-	ShowStatus("Done converting/upgrading '" CL_WHITE "%zu" CL_RESET "' statuses in '" CL_WHITE "%s" CL_RESET "'.\n", entries, file.c_str());
+	ShowStatus("Done converting/upgrading '" CL_WHITE "%zu" CL_RESET "' statuses in '" CL_WHITE
+			   "%s" CL_RESET "'.\n",
+			   entries, file.c_str());
 
 	return true;
 }

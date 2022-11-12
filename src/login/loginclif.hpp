@@ -24,4 +24,4 @@ void do_init_loginclif(void);
  */
 void do_final_loginclif(void);
 
-#endif	/* LOGINCLIF_HPP */
+#endif /* LOGINCLIF_HPP */

@@ -11,9 +11,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../common/mmo.hpp"
 #include "../common/database.hpp"
 #include "../common/db.hpp"
+#include "../common/mmo.hpp"
 
 struct map_session_data;
 struct block_list;
@@ -80,7 +80,7 @@ struct s_achievement_db {
 	enum e_achievement_group group;
 	std::map<uint16, std::shared_ptr<achievement_target>> targets;
 	std::vector<uint32> dependent_ids;
-	struct script_code* condition;
+	struct script_code *condition;
 	int16 mapindex;
 	struct ach_reward {
 		t_itemid nameid;
@@ -91,24 +91,23 @@ struct s_achievement_db {
 		~ach_reward();
 	} rewards;
 	int score;
-	int has_dependent; // Used for quick updating of achievements that depend on others - this is their ID
+	int has_dependent;	// Used for quick updating of achievements that depend on others - this is
+						// their ID
 
 	s_achievement_db();
 	~s_achievement_db();
 };
 
-class AchievementDatabase : public TypesafeYamlDatabase<uint32, s_achievement_db>{
-private:
-	std::vector<uint32> achievement_mobs; // Avoids checking achievements on every mob killed
+class AchievementDatabase : public TypesafeYamlDatabase<uint32, s_achievement_db> {
+   private:
+	std::vector<uint32> achievement_mobs;  // Avoids checking achievements on every mob killed
 
-public:
-	AchievementDatabase() : TypesafeYamlDatabase( "ACHIEVEMENT_DB", 2 ){
-
-	}
+   public:
+	AchievementDatabase() : TypesafeYamlDatabase("ACHIEVEMENT_DB", 2) {}
 
 	void clear() override;
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode( const ryml::NodeRef& node ) override;
+	uint64 parseBodyNode(const ryml::NodeRef &node) override;
 	void loadingFinished() override;
 
 	// Additional
@@ -117,19 +116,17 @@ public:
 
 extern AchievementDatabase achievement_db;
 
-struct s_achievement_level{
+struct s_achievement_level {
 	uint16 level;
 	uint16 points;
 };
 
-class AchievementLevelDatabase : public TypesafeYamlDatabase<uint16, s_achievement_level>{
-public:
-	AchievementLevelDatabase() : TypesafeYamlDatabase( "ACHIEVEMENT_LEVEL_DB", 1 ){
-
-	}
+class AchievementLevelDatabase : public TypesafeYamlDatabase<uint16, s_achievement_level> {
+   public:
+	AchievementLevelDatabase() : TypesafeYamlDatabase("ACHIEVEMENT_LEVEL_DB", 1) {}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode( const ryml::NodeRef& node ) override;
+	uint64 parseBodyNode(const ryml::NodeRef &node) override;
 };
 
 extern AchievementLevelDatabase achievement_level_db;
@@ -142,9 +139,10 @@ void achievement_check_reward(struct map_session_data *sd, int achievement_id);
 void achievement_free(struct map_session_data *sd);
 int achievement_check_progress(struct map_session_data *sd, int achievement_id, int type);
 int *achievement_level(struct map_session_data *sd, bool flag);
-bool achievement_check_condition(struct script_code* condition, struct map_session_data* sd);
+bool achievement_check_condition(struct script_code *condition, struct map_session_data *sd);
 void achievement_get_titles(uint32 char_id);
-void achievement_update_objective(struct map_session_data *sd, enum e_achievement_group group, uint8 arg_count, ...);
+void achievement_update_objective(struct map_session_data *sd, enum e_achievement_group group,
+								  uint8 arg_count, ...);
 int achievement_update_objective_sub(block_list *bl, va_list ap);
 void achievement_read_db(void);
 void achievement_db_reload(void);

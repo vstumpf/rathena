@@ -20,7 +20,8 @@
 /// Comment to disable the official walk path
 /// The official walkpath disables users from taking non-clear walk paths,
 /// e.g. if they want to get around an obstacle they have to walk around it,
-/// while with OFFICIAL_WALKPATH disabled if they click to walk around a obstacle the server will do it automatically
+/// while with OFFICIAL_WALKPATH disabled if they click to walk around a obstacle the server will do
+/// it automatically
 #define OFFICIAL_WALKPATH
 
 /// Uncomment to enable the Cell Stack Limit mod.
@@ -56,23 +57,23 @@
 #define VIP_SCRIPT 0
 
 #ifdef VIP_ENABLE
-	#ifndef MIN_STORAGE
-		#define MIN_STORAGE 300 // Default number of storage slots.
-	#endif
-	#ifndef MAX_CHAR_VIP
-		#define MAX_CHAR_VIP 6 // This must be less than MAX_CHARS
-	#endif
+#ifndef MIN_STORAGE
+#define MIN_STORAGE 300	 // Default number of storage slots.
+#endif
+#ifndef MAX_CHAR_VIP
+#define MAX_CHAR_VIP 6	// This must be less than MAX_CHARS
+#endif
 #else
-	#ifndef MIN_STORAGE
-		#define MIN_STORAGE MAX_STORAGE // If the VIP system is disabled the min = max.
-	#endif
-	#ifndef MAX_CHAR_VIP
-		#define MAX_CHAR_VIP 0
-	#endif
+#ifndef MIN_STORAGE
+#define MIN_STORAGE MAX_STORAGE	 // If the VIP system is disabled the min = max.
+#endif
+#ifndef MAX_CHAR_VIP
+#define MAX_CHAR_VIP 0
+#endif
 #endif
 
 #ifndef MAX_CHAR_BILLING
-	#define MAX_CHAR_BILLING 0 // This must be less than MAX_CHARS
+#define MAX_CHAR_BILLING 0	// This must be less than MAX_CHARS
 #endif
 
 /// Comment to disable warnings for deprecated script commands
@@ -83,8 +84,8 @@
 
 // Uncomment to enable deprecated support for Windows XP and lower
 // Note:
-// Windows XP still has 32bit ticks. This means you need to restart your operating system before time
-// overflows, which is approximately every ~49 days.
+// Windows XP still has 32bit ticks. This means you need to restart your operating system before
+// time overflows, which is approximately every ~49 days.
 //#define DEPRECATED_WINDOWS_SUPPORT
 
 // Uncomment to enable compilation for unsupported compilers
@@ -103,16 +104,15 @@
 /**
  * No settings past this point
  **/
+#include "./classes/general.hpp"
 #include "./packets.hpp"
 #include "./renewal.hpp"
 #include "./secure.hpp"
-#include "./classes/general.hpp"
 
 /**
  * Constants come last; so they process anything that could've been modified in early includes
  **/
-#include "./const.hpp"
-
 #include "../custom/defines_post.hpp"
+#include "./const.hpp"
 
 #endif /* CONFIG_CORE_HPP */

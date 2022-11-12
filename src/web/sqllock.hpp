@@ -8,25 +8,20 @@
 
 #include "../common/sql.hpp"
 
-enum locktype {
-	LOGIN_SQL_LOCK,
-	CHAR_SQL_LOCK,
-	WEB_SQL_LOCK
-};
+enum locktype { LOGIN_SQL_LOCK, CHAR_SQL_LOCK, WEB_SQL_LOCK };
 
 class SQLLock {
-private:
+   private:
 	std::unique_lock<std::mutex> ulock;
-	Sql * handle;
+	Sql* handle;
 	locktype lt;
 
-public:
+   public:
 	SQLLock(locktype);
 	~SQLLock();
 	void lock();
 	void unlock();
-	Sql * getHandle();
+	Sql* getHandle();
 };
-
 
 #endif
