@@ -12,16 +12,17 @@
 #include <vector>
 
 #ifdef WIN32
-	#include <conio.h>
+#include <conio.h>
 #else
-	#include <termios.h>
-	#include <unistd.h>
-	#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
+#include <stdio.h>
 #endif
 
 #include <yaml-cpp/yaml.h>
-#include <ryml_std.hpp>
+
 #include <ryml.hpp>
+#include <ryml_std.hpp>
 
 #include "../common/cbasetypes.hpp"
 #include "../common/core.hpp"
@@ -43,8 +44,8 @@
 #include "../map/channel.hpp"
 #include "../map/chat.hpp"
 #include "../map/date.hpp"
-#include "../map/instance.hpp"
 #include "../map/elemental.hpp"
+#include "../map/instance.hpp"
 #include "../map/mercenary.hpp"
 #include "../map/mob.hpp"
 #include "../map/npc.hpp"
@@ -86,7 +87,8 @@ std::unordered_map<uint16, std::string> aegis_skillnames;
 std::unordered_map<const char *, int64> constants;
 
 // Implement the function instead of including the original version by linking
-void script_set_constant_(const char *name, int64 value, const char *constant_name, bool isparameter, bool deprecated) {
+void script_set_constant_(const char *name, int64 value, const char *constant_name,
+						  bool isparameter, bool deprecated) {
 	if (!deprecated)
 		constants[name] = value;
 }
@@ -108,7 +110,8 @@ int64 constant_lookup_int(const char *constant) {
 	nullpo_retr(-100, constant);
 
 	for (auto const &pair : constants) {
-		if (strlen(pair.first) == strlen(constant) && strncasecmp(pair.first, constant, strlen(constant)) == 0) {
+		if (strlen(pair.first) == strlen(constant) &&
+			strncasecmp(pair.first, constant, strlen(constant)) == 0) {
 			return pair.second;
 		}
 	}
@@ -164,9 +167,7 @@ bool askConfirmation(const char *fmt, ...) {
  * @param node: YAML node
  * @return Version number
  */
-uint32 getHeaderVersion(YAML::Node &node) {
-	return node["Header"]["Version"].as<uint32>();
-}
+uint32 getHeaderVersion(YAML::Node &node) { return node["Header"]["Version"].as<uint32>(); }
 
 /**
  * Copy a file if it exists.
@@ -200,7 +201,8 @@ void copyFileIfExists(std::ofstream &file, const std::string &name, bool newLine
  * @param version: Database version
  * @param name: File name
  */
-void prepareHeader(std::ofstream &file, const std::string &type, uint32 version, const std::string &name) {
+void prepareHeader(std::ofstream &file, const std::string &type, uint32 version,
+				   const std::string &name) {
 	copyFileIfExists(file, "license", false);
 	copyFileIfExists(file, name, true);
 
@@ -286,10 +288,10 @@ int skill_split_atoi(char *str, int *val, int max = MAX_SKILL_LEVEL) {
 			*str++ = 0;
 	}
 
-	if (i == 0) // No data found.
+	if (i == 0)	 // No data found.
 		return 0;
 
-	if (i == 1) // Single value, have the whole range have the same value.
+	if (i == 1)	 // Single value, have the whole range have the same value.
 		return 1;
 
 	return i;
@@ -300,7 +302,8 @@ int skill_split_atoi(char *str, int *val, int max = MAX_SKILL_LEVEL) {
  * @param *str: String input
  * @param *val: Temporary storage
  * @param *delim: Delimiter (for multiple value support)
- * @param min_value: Minimum value. If the splitted value is less or equal than this, will be skipped
+ * @param min_value: Minimum value. If the splitted value is less or equal than this, will be
+ * skipped
  * @param max: Maximum number that can be allocated
  * @return count: Number of success
  */
@@ -313,7 +316,7 @@ uint8 skill_split_atoi2(char *str, int64 *val, const char *delim, int min_value,
 
 		trim(p);
 
-		if (ISDIGIT(p[0])) // If using numeric
+		if (ISDIGIT(p[0]))	// If using numeric
 			n = atoi(p);
 		else {
 			n = constant_lookup_int(p);
@@ -337,7 +340,7 @@ uint8 skill_split_atoi2(char *str, int64 *val, const char *delim, int min_value,
  * @param val1: Temporary storage to first value
  * @param val2: Temporary storage to second value
  */
-static void itemdb_re_split_atoi(char* str, int* val1, int* val2) {
+static void itemdb_re_split_atoi(char *str, int *val1, int *val2) {
 	int i, val[2];
 
 	for (i = 0; i < 2; i++) {
@@ -350,9 +353,9 @@ static void itemdb_re_split_atoi(char* str, int* val1, int* val2) {
 	}
 	if (i == 0) {
 		*val1 = *val2 = 0;
-		return; // no data found
+		return;	 // no data found
 	}
-	if (i == 1) { // Single Value
+	if (i == 1) {  // Single Value
 		*val1 = val[0];
 		*val2 = 0;
 		return;
@@ -386,11 +389,12 @@ static bool isMultiLevel(int arr[]) {
  * @return Converted string
  */
 std::string name2Upper(std::string name) {
-	util::tolower( name );
+	util::tolower(name);
 	name[0] = toupper(name[0]);
 
 	for (size_t i = 0; i < name.size(); i++) {
-		if (name[i - 1] == '_' || (name[i - 2] == '1' && name[i - 1] == 'h') || (name[i - 2] == '2' && name[i - 1] == 'h'))
+		if (name[i - 1] == '_' || (name[i - 2] == '1' && name[i - 1] == 'h') ||
+			(name[i - 2] == '2' && name[i - 1] == 'h'))
 			name[i] = toupper(name[i]);
 	}
 
@@ -411,8 +415,7 @@ static bool parse_item_constants_txt(const char *path) {
 	}
 
 	// process rows one by one
-	while (fgets(line, sizeof(line), fp))
-	{
+	while (fgets(line, sizeof(line), fp)) {
 		char *str[32], *p;
 		int i;
 		lines++;
@@ -427,64 +430,74 @@ static bool parse_item_constants_txt(const char *path) {
 		}
 
 		p = line;
-		while (ISSPACE(*p))
-			++p;
+		while (ISSPACE(*p)) ++p;
 		if (*p == '\0')
-			continue;// empty line
-		for (i = 0; i < 19; ++i)
-		{
+			continue;  // empty line
+		for (i = 0; i < 19; ++i) {
 			str[i] = p;
 			p = strchr(p, ',');
 			if (p == NULL)
-				break;// comma not found
+				break;	// comma not found
 			*p = '\0';
 			++p;
 		}
 
 		t_itemid item_id = strtoul(str[0], nullptr, 10);
 
-		if (p == NULL)
-		{
-			ShowError("itemdb_readdb: Insufficient columns in line %d of \"%s\" (item with id %u), skipping.\n", lines, path, item_id);
+		if (p == NULL) {
+			ShowError(
+				"itemdb_readdb: Insufficient columns in line %d of \"%s\" (item with id %u), "
+				"skipping.\n",
+				lines, path, item_id);
 			continue;
 		}
 
 		// Script
-		if (*p != '{')
-		{
-			ShowError("itemdb_readdb: Invalid format (Script column) in line %d of \"%s\" (item with id %u), skipping.\n", lines, path, item_id);
+		if (*p != '{') {
+			ShowError(
+				"itemdb_readdb: Invalid format (Script column) in line %d of \"%s\" (item with id "
+				"%u), skipping.\n",
+				lines, path, item_id);
 			continue;
 		}
 		str[19] = p + 1;
 		p = strstr(p + 1, "},");
-		if (p == NULL)
-		{
-			ShowError("itemdb_readdb: Invalid format (Script column) in line %d of \"%s\" (item with id %u), skipping.\n", lines, path, item_id);
+		if (p == NULL) {
+			ShowError(
+				"itemdb_readdb: Invalid format (Script column) in line %d of \"%s\" (item with id "
+				"%u), skipping.\n",
+				lines, path, item_id);
 			continue;
 		}
 		*p = '\0';
 		p += 2;
 
 		// OnEquip_Script
-		if (*p != '{')
-		{
-			ShowError("itemdb_readdb: Invalid format (OnEquip_Script column) in line %d of \"%s\" (item with id %u), skipping.\n", lines, path, item_id);
+		if (*p != '{') {
+			ShowError(
+				"itemdb_readdb: Invalid format (OnEquip_Script column) in line %d of \"%s\" (item "
+				"with id %u), skipping.\n",
+				lines, path, item_id);
 			continue;
 		}
 		str[20] = p + 1;
 		p = strstr(p + 1, "},");
-		if (p == NULL)
-		{
-			ShowError("itemdb_readdb: Invalid format (OnEquip_Script column) in line %d of \"%s\" (item with id %u), skipping.\n", lines, path, item_id);
+		if (p == NULL) {
+			ShowError(
+				"itemdb_readdb: Invalid format (OnEquip_Script column) in line %d of \"%s\" (item "
+				"with id %u), skipping.\n",
+				lines, path, item_id);
 			continue;
 		}
 		*p = '\0';
 		p += 2;
 
 		// OnUnequip_Script (last column)
-		if (*p != '{')
-		{
-			ShowError("itemdb_readdb: Invalid format (OnUnequip_Script column) in line %d of \"%s\" (item with id %u), skipping.\n", lines, path, item_id);
+		if (*p != '{') {
+			ShowError(
+				"itemdb_readdb: Invalid format (OnUnequip_Script column) in line %d of \"%s\" "
+				"(item with id %u), skipping.\n",
+				lines, path, item_id);
 			continue;
 		}
 		str[21] = p;
@@ -504,19 +517,23 @@ static bool parse_item_constants_txt(const char *path) {
 			}
 
 			if (lcurly != rcurly) {
-				ShowError("itemdb_readdb: Mismatching curly braces in line %d of \"%s\" (item with id %u), skipping.\n", lines, path, item_id);
+				ShowError(
+					"itemdb_readdb: Mismatching curly braces in line %d of \"%s\" (item with id "
+					"%u), skipping.\n",
+					lines, path, item_id);
 				continue;
 			}
 		}
-		str[21] = str[21] + 1;  //skip the first left curly
-		*p = '\0';              //null the last right curly
+		str[21] = str[21] + 1;	// skip the first left curly
+		*p = '\0';				// null the last right curly
 
 		uint32 view_id = strtoul(str[18], nullptr, 10);
 		char *name = trim(str[1]);
 
 		aegis_itemnames[item_id] = std::string(name);
 
-		if (atoi(str[14]) & (EQP_HELM | EQP_COSTUME_HELM) && util::umap_find(aegis_itemviewid, view_id) == nullptr)
+		if (atoi(str[14]) & (EQP_HELM | EQP_COSTUME_HELM) &&
+			util::umap_find(aegis_itemviewid, view_id) == nullptr)
 			aegis_itemviewid[view_id] = item_id;
 
 		count++;
@@ -524,7 +541,9 @@ static bool parse_item_constants_txt(const char *path) {
 
 	fclose(fp);
 
-	ShowStatus("Done reading '" CL_WHITE "%u" CL_RESET "' entries in '" CL_WHITE "%s" CL_RESET "'.\n", count, path);
+	ShowStatus("Done reading '" CL_WHITE "%u" CL_RESET "' entries in '" CL_WHITE "%s" CL_RESET
+			   "'.\n",
+			   count, path);
 
 	return true;
 }
@@ -533,7 +552,7 @@ const std::string ItemDatabase::getDefaultLocation() {
 	return std::string(db_path) + "/item_db.yml";
 }
 
-uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef &node) {
 	t_itemid nameid;
 
 	if (!this->asUInt32(node, "Id", nameid))
@@ -556,18 +575,13 @@ uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
 
 		if (look > 0) {
 			if (this->nodeExists(node, "Locations")) {
-				const ryml::NodeRef& locationNode = node["Locations"];
+				const ryml::NodeRef &locationNode = node["Locations"];
 
 				static std::vector<std::string> locations = {
-					"Head_Low",
-					"Head_Mid",
-					"Head_Top",
-					"Costume_Head_Low",
-					"Costume_Head_Mid",
-					"Costume_Head_Top"
-				};
+					"Head_Low",			"Head_Mid",			"Head_Top",
+					"Costume_Head_Low", "Costume_Head_Mid", "Costume_Head_Top"};
 
-				for (std::string& location : locations) {
+				for (std::string &location : locations) {
 					if (this->nodeExists(locationNode, location)) {
 						bool active;
 
@@ -585,8 +599,7 @@ uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	return 1;
 }
 
-void ItemDatabase::loadingFinished() {
-}
+void ItemDatabase::loadingFinished() {}
 
 ItemDatabase item_db;
 
@@ -612,7 +625,7 @@ const std::string SkillDatabase::getDefaultLocation() {
 	return std::string(db_path) + "/skill_db.yml";
 }
 
-uint64 SkillDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 SkillDatabase::parseBodyNode(const ryml::NodeRef &node) {
 	t_itemid nameid;
 
 	if (!this->asUInt32(node, "Id", nameid))
@@ -630,20 +643,15 @@ uint64 SkillDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	return 1;
 }
 
-void SkillDatabase::clear() {
-	TypesafeCachedYamlDatabase::clear();
-}
+void SkillDatabase::clear() { TypesafeCachedYamlDatabase::clear(); }
 
-void SkillDatabase::loadingFinished(){
-}
+void SkillDatabase::loadingFinished() {}
 
 SkillDatabase skill_db;
 
-const std::string MobDatabase::getDefaultLocation(){
-	return std::string( db_path ) + "/mob_db.yml";
-}
+const std::string MobDatabase::getDefaultLocation() { return std::string(db_path) + "/mob_db.yml"; }
 
-uint64 MobDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 MobDatabase::parseBodyNode(const ryml::NodeRef &node) {
 	uint16 mob_id;
 
 	if (!this->asUInt16(node, "Id", mob_id))
@@ -661,7 +669,7 @@ uint64 MobDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	return 1;
 }
 
-void MobDatabase::loadingFinished() {};
+void MobDatabase::loadingFinished(){};
 
 MobDatabase mob_db;
 

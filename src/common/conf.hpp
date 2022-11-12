@@ -5,7 +5,6 @@
 #define CONF_HPP
 
 #include "../../3rdparty/libconfig/libconfig.h"
-
 #include "cbasetypes.hpp"
 
 int conf_read_file(config_t *config, const char *config_filename);

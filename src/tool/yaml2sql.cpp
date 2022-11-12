@@ -9,16 +9,17 @@
 #include <vector>
 
 #ifdef WIN32
-	#include <conio.h>
+#include <conio.h>
 #else
-	#include <termios.h>
-	#include <unistd.h>
-	#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
+#include <stdio.h>
 #endif
 
 #include <yaml-cpp/yaml.h>
-#include <ryml_std.hpp>
+
 #include <ryml.hpp>
+#include <ryml_std.hpp>
 
 #include "../common/cbasetypes.hpp"
 #include "../common/core.hpp"
@@ -55,16 +56,16 @@
 using namespace rathena;
 
 #ifndef WIN32
-int getch( void ){
-    struct termios oldattr, newattr;
-    int ch;
-    tcgetattr( STDIN_FILENO, &oldattr );
-    newattr = oldattr;
-    newattr.c_lflag &= ~( ICANON | ECHO );
-    tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
-    ch = getchar();
-    tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
-    return ch;
+int getch(void) {
+	struct termios oldattr, newattr;
+	int ch;
+	tcgetattr(STDIN_FILENO, &oldattr);
+	newattr = oldattr;
+	newattr.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &newattr);
+	ch = getchar();
+	tcsetattr(STDIN_FILENO, TCSANOW, &oldattr);
+	return ch;
 }
 #endif
 
@@ -75,14 +76,15 @@ std::unordered_map<const char *, int64> constants;
 static bool item_db_yaml2sql(const std::string &file, const std::string &table);
 static bool mob_db_yaml2sql(const std::string &file, const std::string &table);
 
-bool fileExists( const std::string& path );
-bool askConfirmation( const char* fmt, ... );
+bool fileExists(const std::string &path);
+bool askConfirmation(const char *fmt, ...);
 
 YAML::Node inNode;
 std::ofstream outFile;
 
 // Implement the function instead of including the original version by linking
-void script_set_constant_(const char *name, int64 value, const char *constant_name, bool isparameter, bool deprecated) {
+void script_set_constant_(const char *name, int64 value, const char *constant_name,
+						  bool isparameter, bool deprecated) {
 	constants[name] = value;
 }
 
@@ -105,7 +107,8 @@ int64 constant_lookup_int(const char *constant) {
 		return -100;
 
 	for (auto const &pair : constants) {
-		if (strlen(pair.first) == strlen(constant) && strncasecmp(pair.first, constant, strlen(constant)) == 0) {
+		if (strlen(pair.first) == strlen(constant) &&
+			strncasecmp(pair.first, constant, strlen(constant)) == 0) {
 			return pair.second;
 		}
 	}
@@ -113,37 +116,41 @@ int64 constant_lookup_int(const char *constant) {
 	return -100;
 }
 
-void copyFileIfExists( std::ofstream& file,const std::string& name ){
+void copyFileIfExists(std::ofstream &file, const std::string &name) {
 	std::string path = "doc/yaml/sql/" + name + ".sql";
 
-	if( fileExists( path ) ){
-		std::ifstream source( path, std::ios::binary );
+	if (fileExists(path)) {
+		std::ifstream source(path, std::ios::binary);
 
 		std::istreambuf_iterator<char> begin_source(source);
 		std::istreambuf_iterator<char> end_source;
-		std::ostreambuf_iterator<char> begin_dest( file );
-		copy( begin_source, end_source, begin_dest );
+		std::ostreambuf_iterator<char> begin_dest(file);
+		copy(begin_source, end_source, begin_dest);
 
 		source.close();
 	}
 }
 
-void prepareHeader(std::ofstream &file, const std::string& name) {
-	copyFileIfExists( file, name );
+void prepareHeader(std::ofstream &file, const std::string &name) {
+	copyFileIfExists(file, name);
 
 	file << "\n";
 }
 
-template<typename Func>
-bool process( const std::string& type, uint32 version, const std::vector<std::string>& paths, const std::string& name, const std::string& to_table, const std::string& table, Func lambda ){
-	for( const std::string& path : paths ){
+template <typename Func>
+bool process(const std::string &type, uint32 version, const std::vector<std::string> &paths,
+			 const std::string &name, const std::string &to_table, const std::string &table,
+			 Func lambda) {
+	for (const std::string &path : paths) {
 		const std::string name_ext = name + ".yml";
 		const std::string from = path + name_ext;
 		const std::string to = "sql-files/" + to_table + ".sql";
 
-		if( fileExists( from ) ){
+		if (fileExists(from)) {
 #ifndef CONVERT_ALL
-			if( !askConfirmation( "Found the file \"%s\", which can be converted to sql.\nDo you want to convert it now? (Y/N)\n", from.c_str() ) ){
+			if (!askConfirmation("Found the file \"%s\", which can be converted to sql.\nDo you "
+								 "want to convert it now? (Y/N)\n",
+								 from.c_str())) {
 				continue;
 			}
 #else
@@ -156,7 +163,9 @@ bool process( const std::string& type, uint32 version, const std::vector<std::st
 				inNode = YAML::LoadFile(from);
 			} catch (YAML::Exception &e) {
 				ShowError("%s (Line %d: Column %d)\n", e.msg.c_str(), e.mark.line, e.mark.column);
-				if (!askConfirmation("Error found in \"%s\" while attempting to load.\nPress any key to continue.\n", from.c_str()))
+				if (!askConfirmation("Error found in \"%s\" while attempting to load.\nPress any "
+									 "key to continue.\n",
+									 from.c_str()))
 					continue;
 			}
 
@@ -165,7 +174,9 @@ bool process( const std::string& type, uint32 version, const std::vector<std::st
 
 #ifndef CONVERT_ALL
 			if (fileExists(to)) {
-				if (!askConfirmation("The file \"%s\" already exists.\nDo you want to replace it? (Y/N)\n", to.c_str())) {
+				if (!askConfirmation(
+						"The file \"%s\" already exists.\nDo you want to replace it? (Y/N)\n",
+						to.c_str())) {
 					continue;
 				}
 			}
@@ -180,7 +191,7 @@ bool process( const std::string& type, uint32 version, const std::vector<std::st
 
 			prepareHeader(outFile, table.compare(to_table) == 0 ? table : to_table);
 
-			if( !lambda( path, name_ext, table ) ){
+			if (!lambda(path, name_ext, table)) {
 				outFile.close();
 				return false;
 			}
@@ -192,8 +203,8 @@ bool process( const std::string& type, uint32 version, const std::vector<std::st
 	return true;
 }
 
-int do_init( int argc, char** argv ){
-	const std::string path_db = std::string( db_path );
+int do_init(int argc, char **argv) {
+	const std::string path_db = std::string(db_path);
 	const std::string path_db_mode = path_db + "/" + DBPATH;
 	const std::string path_db_import = path_db + "/" + DBIMPORT + "/";
 #ifdef RENEWAL
@@ -207,38 +218,39 @@ int do_init( int argc, char** argv ){
 	const std::string mob_table_name = "mob_db";
 	const std::string mob_import_table_name = "mob_db2";
 #endif
-	std::vector<std::string> item_table_suffixes = {
-		"usable",
-		"equip",
-		"etc"
-	};
+	std::vector<std::string> item_table_suffixes = {"usable", "equip", "etc"};
 
-	// Load constants
-	#include "../map/script_constants.hpp"
+// Load constants
+#include "../map/script_constants.hpp"
 
-	for( const std::string& suffix : item_table_suffixes ){
-		if (!process("ITEM_DB", 1, { path_db_mode }, "item_db_" + suffix, item_table_name + "_" + suffix, item_table_name, [](const std::string& path, const std::string& name_ext, const std::string& table) -> bool {
-			return item_db_yaml2sql(path + name_ext, table);
-		})) {
+	for (const std::string &suffix : item_table_suffixes) {
+		if (!process("ITEM_DB", 1, {path_db_mode}, "item_db_" + suffix,
+					 item_table_name + "_" + suffix, item_table_name,
+					 [](const std::string &path, const std::string &name_ext,
+						const std::string &table) -> bool {
+						 return item_db_yaml2sql(path + name_ext, table);
+					 })) {
 			return 0;
 		}
 	}
 
-	if (!process("ITEM_DB", 1, { path_db_import }, "item_db", item_import_table_name, item_import_table_name, [](const std::string& path, const std::string& name_ext, const std::string& table) -> bool {
-		return item_db_yaml2sql(path + name_ext, table);
-	})) {
+	if (!process("ITEM_DB", 1, {path_db_import}, "item_db", item_import_table_name,
+				 item_import_table_name,
+				 [](const std::string &path, const std::string &name_ext, const std::string &table)
+					 -> bool { return item_db_yaml2sql(path + name_ext, table); })) {
 		return 0;
 	}
 
-	if (!process("MOB_DB", 1, { path_db_mode }, "mob_db", mob_table_name, mob_table_name, [](const std::string &path, const std::string &name_ext, const std::string &table) -> bool {
-		return mob_db_yaml2sql(path + name_ext, table);
-	})) {
+	if (!process("MOB_DB", 1, {path_db_mode}, "mob_db", mob_table_name, mob_table_name,
+				 [](const std::string &path, const std::string &name_ext, const std::string &table)
+					 -> bool { return mob_db_yaml2sql(path + name_ext, table); })) {
 		return 0;
 	}
 
-	if (!process("MOB_DB", 1, { path_db_import }, "mob_db", mob_import_table_name, mob_import_table_name, [](const std::string &path, const std::string &name_ext, const std::string &table) -> bool {
-		return mob_db_yaml2sql(path + name_ext, table);
-	})) {
+	if (!process("MOB_DB", 1, {path_db_import}, "mob_db", mob_import_table_name,
+				 mob_import_table_name,
+				 [](const std::string &path, const std::string &name_ext, const std::string &table)
+					 -> bool { return mob_db_yaml2sql(path + name_ext, table); })) {
 		return 0;
 	}
 
@@ -247,37 +259,36 @@ int do_init( int argc, char** argv ){
 	return 0;
 }
 
-void do_final(void){
-}
+void do_final(void) {}
 
-bool fileExists( const std::string& path ){
+bool fileExists(const std::string &path) {
 	std::ifstream in;
 
-	in.open( path );
+	in.open(path);
 
-	if( in.is_open() ){
+	if (in.is_open()) {
 		in.close();
 
 		return true;
-	}else{
+	} else {
 		return false;
 	}
 }
 
-bool askConfirmation( const char* fmt, ... ){
+bool askConfirmation(const char *fmt, ...) {
 	va_list ap;
 
-	va_start( ap, fmt );
+	va_start(ap, fmt);
 
-	_vShowMessage( MSG_NONE, fmt, ap );
+	_vShowMessage(MSG_NONE, fmt, ap);
 
-	va_end( ap );
+	va_end(ap);
 
 	char c = getch();
 
-	if( c == 'Y' || c == 'y' ){
+	if (c == 'Y' || c == 'y') {
 		return true;
-	}else{
+	} else {
 		return false;
 	}
 }
@@ -287,7 +298,8 @@ std::string name2Upper(std::string name) {
 	name[0] = toupper(name[0]);
 
 	for (size_t i = 0; i < name.size(); i++) {
-		if (name[i - 1] == '_' || (name[i - 2] == '1' && name[i - 1] == 'h') || (name[i - 2] == '2' && name[i - 1] == 'h'))
+		if (name[i - 1] == '_' || (name[i - 2] == '1' && name[i - 1] == 'h') ||
+			(name[i - 2] == '2' && name[i - 1] == 'h'))
 			name[i] = toupper(name[i]);
 	}
 
@@ -308,9 +320,7 @@ std::string rtrim(const std::string &s) {
 	return (end == std::string::npos) ? "" : s.substr(0, end + 1);
 }
 
-std::string string_trim(const std::string &s) {
-	return rtrim(ltrim(s));
-}
+std::string string_trim(const std::string &s) { return rtrim(ltrim(s)); }
 
 std::string string_escape(const std::string &s) {
 	size_t n = s.length();
@@ -561,8 +571,7 @@ static bool item_db_yaml2sql(const std::string &file, const std::string &table) 
 				column.append("`location_left_hand`,");
 				column.append("`location_right_hand`,");
 
-			}
-			else {
+			} else {
 				if (appendEntry(locations["Left_Hand"], value))
 					column.append("`location_left_hand`,");
 				if (appendEntry(locations["Right_Hand"], value))
@@ -585,8 +594,7 @@ static bool item_db_yaml2sql(const std::string &file, const std::string &table) 
 				column.append("`location_right_accessory`,");
 				column.append("`location_left_accessory`,");
 
-			}
-			else {
+			} else {
 				if (appendEntry(locations["Right_Accessory"], value))
 					column.append("`location_right_accessory`,");
 				if (appendEntry(locations["Left_Accessory"], value))
@@ -719,14 +727,16 @@ static bool item_db_yaml2sql(const std::string &file, const std::string &table) 
 		if (appendEntry(input["UnEquipScript"], value, true))
 			column.append("`unequip_script`,");
 
-		column.pop_back(); // Remove last ','
-		value.pop_back(); // Remove last ','
+		column.pop_back();	// Remove last ','
+		value.pop_back();	// Remove last ','
 
 		outFile << "REPLACE INTO `" + table + "` (" + column + ") VALUES (" + value + ");\n";
 		entries++;
 	}
 
-	ShowStatus("Done converting '" CL_WHITE "%zu" CL_RESET "' items in '" CL_WHITE "%s" CL_RESET "'.\n", entries, file.c_str());
+	ShowStatus("Done converting '" CL_WHITE "%zu" CL_RESET "' items in '" CL_WHITE "%s" CL_RESET
+			   "'.\n",
+			   entries, file.c_str());
 
 	return true;
 }
@@ -924,14 +934,16 @@ static bool mob_db_yaml2sql(const std::string &file, const std::string &table) {
 			}
 		}
 
-		column.pop_back(); // Remove last ','
-		value.pop_back(); // Remove last ','
+		column.pop_back();	// Remove last ','
+		value.pop_back();	// Remove last ','
 
 		outFile << "REPLACE INTO `" + table + "` (" + column + ") VALUES (" + value + ");\n";
 		entries++;
 	}
 
-	ShowStatus("Done converting '" CL_WHITE "%zu" CL_RESET "' mobs in '" CL_WHITE "%s" CL_RESET "'.\n", entries, file.c_str());
+	ShowStatus("Done converting '" CL_WHITE "%zu" CL_RESET "' mobs in '" CL_WHITE "%s" CL_RESET
+			   "'.\n",
+			   entries, file.c_str());
 
 	return true;
 }

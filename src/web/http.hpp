@@ -10,12 +10,10 @@
 
 #include <httplib.h>
 
-
 typedef httplib::Request Request;
 typedef httplib::Response Response;
 
-#define HANDLER_FUNC(x) void x (const Request &req, Response &res)
+#define HANDLER_FUNC(x) void x(const Request &req, Response &res)
 typedef HANDLER_FUNC((*handler_func));
-
 
 #endif

@@ -15,7 +15,8 @@
 
 /**
  * Optional NPC Dialog Timer
- * When enabled all npcs dialog will 'timeout' if user is on idle for longer than the amount of seconds allowed
+ * When enabled all npcs dialog will 'timeout' if user is on idle for longer than the amount of
+ *seconds allowed
  * - On 'timeout' the npc dialog window changes its next/menu to a 'close' button
  * Comment to disable the timer.
  **/

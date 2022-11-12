@@ -4,8 +4,8 @@
 #ifndef PACKETS_HPP
 #define PACKETS_HPP
 
-#pragma warning( push )
-#pragma warning( disable : 4200 )
+#pragma warning(push)
+#pragma warning(disable : 4200)
 
 // Required for MESSAGE_SIZE, TALKBOX_MESSAGE_SIZE
 #include "map.hpp"
@@ -14,11 +14,11 @@
 #define UNAVAILABLE_STRUCT int8 _____unavailable
 /* packet size constant for itemlist */
 #if MAX_INVENTORY > MAX_STORAGE && MAX_INVENTORY > MAX_CART
-	#define MAX_ITEMLIST MAX_INVENTORY
+#define MAX_ITEMLIST MAX_INVENTORY
 #elif MAX_CART > MAX_INVENTORY && MAX_CART > MAX_STORAGE
-	#define MAX_ITEMLIST MAX_CART
+#define MAX_ITEMLIST MAX_CART
 #else
-	#define MAX_ITEMLIST MAX_STORAGE
+#define MAX_ITEMLIST MAX_STORAGE
 #endif
 #define MAX_ACHIEVEMENT_DB MAX_ACHIEVEMENT_OBJECTIVES
 
@@ -28,16 +28,16 @@
 #include "packets_struct.hpp"
 
 // NetBSD 5 and Solaris don't like pragma pack but accept the packed attribute
-#if !defined( sun ) && ( !defined( __NETBSD__ ) || __NetBSD_Version__ >= 600000000 )
-	#pragma pack( push, 1 )
+#if !defined(sun) && (!defined(__NETBSD__) || __NetBSD_Version__ >= 600000000)
+#pragma pack(push, 1)
 #endif
 
-struct PACKET_ZC_PC_PURCHASE_RESULT{
+struct PACKET_ZC_PC_PURCHASE_RESULT {
 	int16 packetType;
 	uint8 result;
 } __attribute__((packed));
 
-struct PACKET_CZ_REQ_MAKINGARROW{
+struct PACKET_CZ_REQ_MAKINGARROW {
 	int16 packetType;
 #if PACKETVER_MAIN_NUM >= 20181121 || PACKETVER_RE_NUM >= 20180704 || PACKETVER_ZERO_NUM >= 20181114
 	uint32 itemId;
@@ -46,13 +46,13 @@ struct PACKET_CZ_REQ_MAKINGARROW{
 #endif
 } __attribute__((packed));
 
-struct PACKET_CZ_SE_PC_BUY_CASHITEM_LIST_sub{
+struct PACKET_CZ_SE_PC_BUY_CASHITEM_LIST_sub {
 	uint32 itemId;
 	uint32 amount;
 	uint16 tab;
 } __attribute__((packed));
 
-struct PACKET_CZ_SE_PC_BUY_CASHITEM_LIST{
+struct PACKET_CZ_SE_PC_BUY_CASHITEM_LIST {
 	int16 packetType;
 	int16 packetLength;
 	uint16 count;
@@ -60,7 +60,7 @@ struct PACKET_CZ_SE_PC_BUY_CASHITEM_LIST{
 	struct PACKET_CZ_SE_PC_BUY_CASHITEM_LIST_sub items[];
 } __attribute__((packed));
 
-struct PACKET_CZ_REQ_CASH_BARGAIN_SALE_ITEM_INFO{
+struct PACKET_CZ_REQ_CASH_BARGAIN_SALE_ITEM_INFO {
 	int16 packetType;
 	int16 packetLength;
 	uint32 AID;
@@ -71,7 +71,7 @@ struct PACKET_CZ_REQ_CASH_BARGAIN_SALE_ITEM_INFO{
 #endif
 } __attribute__((packed));
 
-struct PACKET_ZC_ACK_CASH_BARGAIN_SALE_ITEM_INFO{
+struct PACKET_ZC_ACK_CASH_BARGAIN_SALE_ITEM_INFO {
 	int16 packetType;
 	uint16 result;
 #if PACKETVER_MAIN_NUM >= 20181121 || PACKETVER_RE_NUM >= 20180704 || PACKETVER_ZERO_NUM >= 20181114
@@ -82,7 +82,7 @@ struct PACKET_ZC_ACK_CASH_BARGAIN_SALE_ITEM_INFO{
 	uint32 price;
 } __attribute__((packed));
 
-struct PACKET_CZ_REQ_APPLY_BARGAIN_SALE_ITEM{
+struct PACKET_CZ_REQ_APPLY_BARGAIN_SALE_ITEM {
 	int16 packetType;
 	uint32 AID;
 #if PACKETVER_MAIN_NUM >= 20181121 || PACKETVER_RE_NUM >= 20180704 || PACKETVER_ZERO_NUM >= 20181114
@@ -99,7 +99,7 @@ struct PACKET_CZ_REQ_APPLY_BARGAIN_SALE_ITEM{
 #endif
 } __attribute__((packed));
 
-struct PACKET_CZ_REQ_REMOVE_BARGAIN_SALE_ITEM{
+struct PACKET_CZ_REQ_REMOVE_BARGAIN_SALE_ITEM {
 	int16 packetType;
 	uint32 AID;
 #if PACKETVER_MAIN_NUM >= 20181121 || PACKETVER_RE_NUM >= 20180704 || PACKETVER_ZERO_NUM >= 20181114
@@ -109,7 +109,7 @@ struct PACKET_CZ_REQ_REMOVE_BARGAIN_SALE_ITEM{
 #endif
 } __attribute__((packed));
 
-struct PACKET_ZC_NOTIFY_BARGAIN_SALE_SELLING{
+struct PACKET_ZC_NOTIFY_BARGAIN_SALE_SELLING {
 	int16 packetType;
 #if PACKETVER_MAIN_NUM >= 20181121 || PACKETVER_RE_NUM >= 20180704 || PACKETVER_ZERO_NUM >= 20181114
 	uint32 itemId;
@@ -119,7 +119,7 @@ struct PACKET_ZC_NOTIFY_BARGAIN_SALE_SELLING{
 	uint32 remainingTime;
 } __attribute__((packed));
 
-struct PACKET_ZC_NOTIFY_BARGAIN_SALE_CLOSE{
+struct PACKET_ZC_NOTIFY_BARGAIN_SALE_CLOSE {
 	int16 packetType;
 #if PACKETVER_MAIN_NUM >= 20181121 || PACKETVER_RE_NUM >= 20180704 || PACKETVER_ZERO_NUM >= 20181114
 	uint32 itemId;
@@ -128,7 +128,7 @@ struct PACKET_ZC_NOTIFY_BARGAIN_SALE_CLOSE{
 #endif
 } __attribute__((packed));
 
-struct PACKET_ZC_ACK_COUNT_BARGAIN_SALE_ITEM{
+struct PACKET_ZC_ACK_COUNT_BARGAIN_SALE_ITEM {
 	int16 packetType;
 #if PACKETVER_MAIN_NUM >= 20181121 || PACKETVER_RE_NUM >= 20180704 || PACKETVER_ZERO_NUM >= 20181114
 	uint32 itemId;
@@ -138,7 +138,7 @@ struct PACKET_ZC_ACK_COUNT_BARGAIN_SALE_ITEM{
 	uint32 amount;
 } __attribute__((packed));
 
-struct PACKET_ZC_ACK_GUILDSTORAGE_LOG_sub{
+struct PACKET_ZC_ACK_GUILDSTORAGE_LOG_sub {
 	uint32 id;
 #if PACKETVER_MAIN_NUM >= 20181121 || PACKETVER_RE_NUM >= 20180704 || PACKETVER_ZERO_NUM >= 20181114
 	uint32 itemId;
@@ -157,7 +157,7 @@ struct PACKET_ZC_ACK_GUILDSTORAGE_LOG_sub{
 	uint8 attribute;
 } __attribute__((packed));
 
-struct PACKET_ZC_ACK_GUILDSTORAGE_LOG{
+struct PACKET_ZC_ACK_GUILDSTORAGE_LOG {
 	int16 packetType;
 	int16 PacketLength;
 	uint16 result;
@@ -165,7 +165,7 @@ struct PACKET_ZC_ACK_GUILDSTORAGE_LOG{
 	struct PACKET_ZC_ACK_GUILDSTORAGE_LOG_sub items[];
 } __attribute__((packed));
 
-struct PACKET_CZ_UNCONFIRMED_TSTATUS_UP{
+struct PACKET_CZ_UNCONFIRMED_TSTATUS_UP {
 	int16 packetType;
 	int16 type;
 	int16 amount;
@@ -190,13 +190,13 @@ struct PACKET_ZC_CHANGE_GUILD {
 #endif
 } __attribute__((packed));
 
-struct PACKET_ZC_BROADCAST{
+struct PACKET_ZC_BROADCAST {
 	int16 packetType;
 	int16 PacketLength;
 	char message[];
 } __attribute__((packed));
 
-struct PACKET_ZC_BROADCAST2{
+struct PACKET_ZC_BROADCAST2 {
 	int16 packetType;
 	int16 PacketLength;
 	uint32 fontColor;
@@ -207,7 +207,7 @@ struct PACKET_ZC_BROADCAST2{
 	char message[];
 } __attribute__((packed));
 
-struct PACKET_ZC_SOULENERGY{
+struct PACKET_ZC_SOULENERGY {
 	int16 PacketType;
 	uint32 AID;
 	uint16 num;
@@ -217,12 +217,12 @@ struct PACKET_ZC_ENTRY_QUEUE_INIT {
 	int16 packetType;
 } __attribute__((packed));
 
-struct PACKET_CZ_UNCONFIRMED_RODEX_RETURN{
+struct PACKET_CZ_UNCONFIRMED_RODEX_RETURN {
 	int16 packetType;
 	uint32 msgId;
 } __attribute__((packed));
 
-struct PACKET_CZ_REQ_STYLE_CLOSE{
+struct PACKET_CZ_REQ_STYLE_CLOSE {
 	int16 packetType;
 } __attribute__((packed));
 
@@ -240,78 +240,78 @@ struct PACKET_ZC_SUMMON_HP_UPDATE {
 	uint32 Value;
 } __attribute__((packed));
 
-struct PACKET_ZC_REPUTE_INFO_sub{
+struct PACKET_ZC_REPUTE_INFO_sub {
 	uint64 type;
 	int64 points;
 } __attribute__((packed));
 
-struct PACKET_ZC_REPUTE_INFO{
+struct PACKET_ZC_REPUTE_INFO {
 	int16 packetType;
 	int16 packetLength;
 	uint8 success;
 	struct PACKET_ZC_REPUTE_INFO_sub list[];
 } __attribute__((packed));
 
-struct PACKET_ZC_OPEN_REFORM_UI{
+struct PACKET_ZC_OPEN_REFORM_UI {
 	int16 packetType;
 	uint32 itemId;
 } __attribute__((packed));
 
-struct PACKET_CZ_CLOSE_REFORM_UI{
+struct PACKET_CZ_CLOSE_REFORM_UI {
 	int16 packetType;
 } __attribute__((packed));
 
-struct PACKET_CZ_ITEM_REFORM{
+struct PACKET_CZ_ITEM_REFORM {
 	int16 packetType;
 	uint32 itemId;
 	uint16 index;
 } __attribute__((packed));
 
-struct PACKET_ZC_ITEM_REFORM_ACK{
+struct PACKET_ZC_ITEM_REFORM_ACK {
 	int16 packetType;
 	uint16 index;
 	uint8 result;
 } __attribute__((packed));
 
-struct PACKET_ZC_UI_OPEN_V3{
+struct PACKET_ZC_UI_OPEN_V3 {
 	int16 packetType;
 	uint8 type;
 	uint64 data;
 } __attribute__((packed));
 
-struct PACKET_CZ_REQUEST_RANDOM_ENCHANT{
+struct PACKET_CZ_REQUEST_RANDOM_ENCHANT {
 	int16 packetType;
 	uint64 clientLuaIndex;
 	uint16 index;
 } __attribute__((packed));
 
-struct PACKET_CZ_REQUEST_PERFECT_ENCHANT{
+struct PACKET_CZ_REQUEST_PERFECT_ENCHANT {
 	int16 packetType;
 	uint64 clientLuaIndex;
 	uint16 index;
 	uint32 itemId;
 } __attribute__((packed));
 
-struct PACKET_CZ_REQUEST_UPGRADE_ENCHANT{
+struct PACKET_CZ_REQUEST_UPGRADE_ENCHANT {
 	int16 packetType;
 	uint64 clientLuaIndex;
 	uint16 index;
 	uint16 slot;
 } __attribute__((packed));
 
-struct PACKET_CZ_REQUEST_RESET_ENCHANT{
+struct PACKET_CZ_REQUEST_RESET_ENCHANT {
 	int16 packetType;
 	uint64 clientLuaIndex;
 	uint16 index;
 } __attribute__((packed));
 
-struct PACKET_ZC_RESPONSE_ENCHANT{
+struct PACKET_ZC_RESPONSE_ENCHANT {
 	int16 packetType;
 	uint32 messageId;
 	uint32 enchantItemId;
 } __attribute__((packed));
 
-struct PACKET_CZ_CLOSE_UI_ENCHANT{
+struct PACKET_CZ_CLOSE_UI_ENCHANT {
 	int16 packetType;
 } __attribute__((packed));
 
@@ -322,7 +322,7 @@ struct PACKET_ZC_TARGET_SPIRITS {
 	uint16 amount;
 } __attribute__((packed));
 
-struct PACKET_CZ_USE_PACKAGEITEM{
+struct PACKET_CZ_USE_PACKAGEITEM {
 	int16 PacketType;
 	uint16 index;
 	uint32 AID;
@@ -330,15 +330,17 @@ struct PACKET_CZ_USE_PACKAGEITEM{
 	uint32 BoxIndex;
 } __attribute__((packed));
 
-struct PACKET_ZC_FRIENDS_LIST_sub{
+struct PACKET_ZC_FRIENDS_LIST_sub {
 	uint32 AID;
 	uint32 CID;
-#if !( PACKETVER_MAIN_NUM >= 20180307 || PACKETVER_RE_NUM >= 20180221 || PACKETVER_ZERO_NUM >= 20180328 ) || PACKETVER >= 20200902
+#if !(PACKETVER_MAIN_NUM >= 20180307 || PACKETVER_RE_NUM >= 20180221 || \
+	  PACKETVER_ZERO_NUM >= 20180328) ||                                \
+	PACKETVER >= 20200902
 	char name[NAME_LENGTH];
 #endif
 } __attribute__((packed));
 
-struct PACKET_ZC_FRIENDS_LIST{
+struct PACKET_ZC_FRIENDS_LIST {
 	int16 packetType;
 	int16 PacketLength;
 	struct PACKET_ZC_FRIENDS_LIST_sub friends[];
@@ -355,21 +357,21 @@ struct PACKET_CZ_PC_SELL_ITEMLIST {
 	PACKET_CZ_PC_SELL_ITEMLIST_sub sellList[];
 } __attribute__((packed));
 
-struct PACKET_CZ_REQ_CHANGE_MEMBERPOS_sub{
+struct PACKET_CZ_REQ_CHANGE_MEMBERPOS_sub {
 	uint32 AID;
 	uint32 CID;
 	int32 position;
 } __attribute__((packed));
 
-struct PACKET_CZ_REQ_CHANGE_MEMBERPOS{
+struct PACKET_CZ_REQ_CHANGE_MEMBERPOS {
 	int16 packetType;
 	int16 packetLength;
 	struct PACKET_CZ_REQ_CHANGE_MEMBERPOS_sub list[];
 } __attribute__((packed));
 
 // NetBSD 5 and Solaris don't like pragma pack but accept the packed attribute
-#if !defined( sun ) && ( !defined( __NETBSD__ ) || __NetBSD_Version__ >= 600000000 )
-	#pragma pack( pop )
+#if !defined(sun) && (!defined(__NETBSD__) || __NetBSD_Version__ >= 600000000)
+#pragma pack(pop)
 #endif
 
 DEFINE_PACKET_HEADER(ZC_NOTIFY_CHAT, 0x8d)
@@ -383,14 +385,14 @@ DEFINE_PACKET_HEADER(ZC_ACK_REQMAKINGITEM, 0x18f)
 DEFINE_PACKET_HEADER(CZ_REQ_MAKINGARROW, 0x1ae)
 DEFINE_PACKET_HEADER(ZC_BROADCAST2, 0x1c3)
 #if PACKETVER_MAIN_NUM >= 20200916 || PACKETVER_RE_NUM >= 20200724
-	DEFINE_PACKET_HEADER(CZ_REQ_ITEMREPAIR, 0xb66)
+DEFINE_PACKET_HEADER(CZ_REQ_ITEMREPAIR, 0xb66)
 #else
-	DEFINE_PACKET_HEADER(CZ_REQ_ITEMREPAIR, 0x1fd)
+DEFINE_PACKET_HEADER(CZ_REQ_ITEMREPAIR, 0x1fd)
 #endif
 #if PACKETVER >= 20190724
-	DEFINE_PACKET_HEADER(ZC_CHANGE_GUILD, 0x0b47)
+DEFINE_PACKET_HEADER(ZC_CHANGE_GUILD, 0x0b47)
 #else
-	DEFINE_PACKET_HEADER(ZC_CHANGE_GUILD, 0x1b4)
+DEFINE_PACKET_HEADER(ZC_CHANGE_GUILD, 0x1b4)
 #endif
 DEFINE_PACKET_HEADER(ZC_FRIENDS_LIST, 0x201)
 DEFINE_PACKET_HEADER(ZC_NOTIFY_WEAPONITEMLIST, 0x221)
@@ -438,13 +440,27 @@ DEFINE_PACKET_HEADER(CZ_CLOSE_UI_ENCHANT, 0x0ba0)
 DEFINE_PACKET_HEADER(CZ_USE_PACKAGEITEM, 0x0baf)
 DEFINE_PACKET_HEADER(CZ_PC_SELL_ITEMLIST, 0x00c9)
 
-const int16 MAX_INVENTORY_ITEM_PACKET_NORMAL = ( ( INT16_MAX - ( sizeof( struct packet_itemlist_normal ) - ( sizeof( struct NORMALITEM_INFO ) * MAX_ITEMLIST) ) ) / sizeof( struct NORMALITEM_INFO ) );
-const int16 MAX_INVENTORY_ITEM_PACKET_EQUIP = ( ( INT16_MAX - ( sizeof( struct packet_itemlist_equip ) - ( sizeof( struct EQUIPITEM_INFO ) * MAX_ITEMLIST ) ) ) / sizeof( struct EQUIPITEM_INFO ) );
+const int16 MAX_INVENTORY_ITEM_PACKET_NORMAL =
+	((INT16_MAX -
+	  (sizeof(struct packet_itemlist_normal) - (sizeof(struct NORMALITEM_INFO) * MAX_ITEMLIST))) /
+	 sizeof(struct NORMALITEM_INFO));
+const int16 MAX_INVENTORY_ITEM_PACKET_EQUIP =
+	((INT16_MAX -
+	  (sizeof(struct packet_itemlist_equip) - (sizeof(struct EQUIPITEM_INFO) * MAX_ITEMLIST))) /
+	 sizeof(struct EQUIPITEM_INFO));
 
-const int16 MAX_STORAGE_ITEM_PACKET_NORMAL = ( ( INT16_MAX - ( sizeof( struct ZC_STORE_ITEMLIST_NORMAL ) - ( sizeof( struct NORMALITEM_INFO ) * MAX_ITEMLIST) ) ) / sizeof( struct NORMALITEM_INFO ) );
-const int16 MAX_STORAGE_ITEM_PACKET_EQUIP = ( ( INT16_MAX - ( sizeof( struct ZC_STORE_ITEMLIST_EQUIP ) - ( sizeof( struct EQUIPITEM_INFO ) * MAX_ITEMLIST ) ) ) / sizeof( struct EQUIPITEM_INFO ) );
+const int16 MAX_STORAGE_ITEM_PACKET_NORMAL =
+	((INT16_MAX -
+	  (sizeof(struct ZC_STORE_ITEMLIST_NORMAL) - (sizeof(struct NORMALITEM_INFO) * MAX_ITEMLIST))) /
+	 sizeof(struct NORMALITEM_INFO));
+const int16 MAX_STORAGE_ITEM_PACKET_EQUIP =
+	((INT16_MAX -
+	  (sizeof(struct ZC_STORE_ITEMLIST_EQUIP) - (sizeof(struct EQUIPITEM_INFO) * MAX_ITEMLIST))) /
+	 sizeof(struct EQUIPITEM_INFO));
 
-const int16 MAX_GUILD_STORAGE_LOG_PACKET = ( ( INT16_MAX - sizeof( struct PACKET_ZC_ACK_GUILDSTORAGE_LOG ) ) / sizeof( struct PACKET_ZC_ACK_GUILDSTORAGE_LOG_sub ) );
+const int16 MAX_GUILD_STORAGE_LOG_PACKET =
+	((INT16_MAX - sizeof(struct PACKET_ZC_ACK_GUILDSTORAGE_LOG)) /
+	 sizeof(struct PACKET_ZC_ACK_GUILDSTORAGE_LOG_sub));
 
 #undef MAX_ITEM_OPTIONS
 #undef UNAVAILABLE_STRUCT
@@ -453,6 +469,6 @@ const int16 MAX_GUILD_STORAGE_LOG_PACKET = ( ( INT16_MAX - sizeof( struct PACKET
 #undef MAX_PACKET_POS
 #undef DEFINE_PACKET_HEADER
 
-#pragma warning( pop )
+#pragma warning(pop)
 
 #endif /* PACKETS_HPP */

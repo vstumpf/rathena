@@ -4,7 +4,7 @@
 #ifndef CONFIG_RENEWAL_HPP
 #define CONFIG_RENEWAL_HPP
 
-//quick option to disable all renewal option, used by ./configure
+// quick option to disable all renewal option, used by ./configure
 //#define PRERE
 #ifndef PRERE
 /**
@@ -12,9 +12,9 @@
  * For detailed guidance on these check http://rathena.org/wiki/SRC/config/
  **/
 
-
 /**
- * @INFO: This file holds general-purpose renewal settings, for class-specific ones check /src/config/classes folder
+ * @INFO: This file holds general-purpose renewal settings, for class-specific ones check
+ * /src/config/classes folder
  **/
 
 /// Game renewal server mode
@@ -27,8 +27,8 @@
 /// (disable by commenting the line)
 ///
 /// Leave this line to enable renewal casting time algorithms and enable fixed cast bonuses.
-/// See also default_fixed_castrate in conf/battle/skill.conf for default fixed cast time (default is 20%).
-/// Cast time is altered be 2 portion, Variable Cast Time (VCT) and Fixed Cast Time (FCT).
+/// See also default_fixed_castrate in conf/battle/skill.conf for default fixed cast time (default
+/// is 20%). Cast time is altered be 2 portion, Variable Cast Time (VCT) and Fixed Cast Time (FCT).
 /// By default FCT is 20% of VCT (some skills aren't)
 /// - VCT is decreased by DEX * 2 + INT.
 /// - FCT is NOT reduced by stats, reduced by equips or buffs.
@@ -40,15 +40,16 @@
 /// (disable by commenting the line)
 ///
 /// Leave this line to enable renewal item drop rate algorithms
-/// While enabled a special modified based on the difference between the player and monster level is applied
-/// Based on the http://irowiki.org/wiki/Drop_System#Level_Factor table
+/// While enabled a special modified based on the difference between the player and monster level is
+/// applied Based on the http://irowiki.org/wiki/Drop_System#Level_Factor table
 #define RENEWAL_DROP
 
 /// Renewal exp rate algorithms
 /// (disable by commenting the line)
 ///
 /// Leave this line to enable renewal item exp rate algorithms
-/// While enabled a special modified based on the difference between the player and monster level is applied
+/// While enabled a special modified based on the difference between the player and monster level is
+/// applied
 #define RENEWAL_EXP
 
 /// Renewal level modifier on damage

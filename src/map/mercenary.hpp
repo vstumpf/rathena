@@ -5,9 +5,8 @@
 #define MERCENARY_HPP
 
 #include "../common/cbasetypes.hpp"
-
-#include "status.hpp" // struct status_data, struct status_change
-#include "unit.hpp" // struct unit_data
+#include "status.hpp"  // struct status_data, struct status_change
+#include "unit.hpp"	   // struct unit_data
 
 // number of cells that a mercenary can walk to from it's master before being warped
 #define MAX_MER_DISTANCE 15
@@ -57,16 +56,14 @@ struct s_mercenary_data {
 	unsigned devotion_flag : 1;
 };
 
-struct view_data * mercenary_get_viewdata(uint16 class_);
+struct view_data *mercenary_get_viewdata(uint16 class_);
 
 class MercenaryDatabase : public TypesafeYamlDatabase<int32, s_mercenary_db> {
-public:
-	MercenaryDatabase() : TypesafeYamlDatabase("MERCENARY_DB", 1) {
-
-	}
+   public:
+	MercenaryDatabase() : TypesafeYamlDatabase("MERCENARY_DB", 1) {}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::NodeRef &node) override;
 };
 
 extern MercenaryDatabase mercenary_db;

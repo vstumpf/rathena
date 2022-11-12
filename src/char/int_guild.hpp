@@ -5,6 +5,7 @@
 #define INT_GUILD_HPP
 
 #include <string>
+
 #include "../common/cbasetypes.hpp"
 #include "../common/database.hpp"
 
@@ -33,10 +34,8 @@ struct s_guild_exp_db {
 };
 
 class GuildExpDatabase : public TypesafeYamlDatabase<uint16, s_guild_exp_db> {
-public:
-	GuildExpDatabase() : TypesafeYamlDatabase("GUILD_EXP_DB", 1) {
-
-	}
+   public:
+	GuildExpDatabase() : TypesafeYamlDatabase("GUILD_EXP_DB", 1) {}
 
 	const std::string getDefaultLocation() override;
 	uint64 parseBodyNode(const ryml::NodeRef& node) override;
@@ -49,11 +48,11 @@ public:
 int inter_guild_parse_frommap(int fd);
 void inter_guild_sql_init(void);
 void inter_guild_sql_final(void);
-int inter_guild_leave(int guild_id,uint32 account_id,uint32 char_id);
-int mapif_parse_BreakGuild(int fd,int guild_id);
+int inter_guild_leave(int guild_id, uint32 account_id, uint32 char_id);
+int mapif_parse_BreakGuild(int fd, int guild_id);
 int inter_guild_broken(int guild_id);
-int inter_guild_sex_changed(int guild_id,uint32 account_id,uint32 char_id, short gender);
-int inter_guild_charname_changed(int guild_id,uint32 account_id, uint32 char_id, char *name);
+int inter_guild_sex_changed(int guild_id, uint32 account_id, uint32 char_id, short gender);
+int inter_guild_charname_changed(int guild_id, uint32 account_id, uint32 char_id, char* name);
 int inter_guild_CharOnline(uint32 char_id, int guild_id);
 int inter_guild_CharOffline(uint32 char_id, int guild_id);
 uint16 inter_guild_storagemax(int guild_id);
