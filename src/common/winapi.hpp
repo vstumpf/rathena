@@ -49,12 +49,13 @@
 // clang-format off
 // keep io.h import before windows
 #include <io.h>
+// keep windows before everything else
+#include <Windows.h>
 // clang-format on
 #include <In6addr.h>
 #include <MMSystem.h>
 #include <Mswsock.h>
 #include <WinSock2.h>
-#include <Windows.h>
 #include <Ws2tcpip.h>
 
 #undef NOMINMAX
