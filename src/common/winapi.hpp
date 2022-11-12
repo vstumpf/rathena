@@ -51,11 +51,11 @@
 #include <io.h>
 // keep windows before everything else
 #include <Windows.h>
+#include <WinSock2.h>
 // clang-format on
 #include <In6addr.h>
 #include <MMSystem.h>
 #include <Mswsock.h>
-#include <WinSock2.h>
 #include <Ws2tcpip.h>
 
 #undef NOMINMAX
