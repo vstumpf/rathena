@@ -9,50 +9,14 @@
 #include "../common/cbasetypes.hpp"
 #include "../common/socket.hpp"
 #include "../common/timer.hpp"
-#include "../common/grfio.hpp"
 #include "../common/malloc.hpp"
-#include "../common/nullpo.hpp"
-#include "../common/random.hpp"
 #include "../common/showmsg.hpp"
 #include "../common/strlib.hpp"
 #include "../common/utils.hpp"
-#include "../common/ers.hpp"
 #include "../common/conf.hpp"
 
-#include "map.hpp"
-#include "chrif.hpp"
-#include "pc.hpp"
-#include "pc_groups.hpp"
-#include "status.hpp"
-#include "npc.hpp"
-#include "itemdb.hpp"
-#include "chat.hpp"
-#include "trade.hpp"
-#include "storage.hpp"
-#include "script.hpp"
-#include "skill.hpp"
-#include "atcommand.hpp"
-#include "intif.hpp"
-#include "battle.hpp"
-#include "battleground.hpp"
-#include "mob.hpp"
-#include "party.hpp"
-#include "unit.hpp"
-#include "guild.hpp"
-#include "vending.hpp"
-#include "pet.hpp"
-#include "homunculus.hpp"
-#include "instance.hpp"
-#include "mercenary.hpp"
-#include "elemental.hpp"
-#include "log.hpp"
 #include "clif.hpp"
-#include "mail.hpp"
-#include "quest.hpp"
-#include "cashshop.hpp"
 #include "channel.hpp"
-#include "achievement.hpp"
-#include "clan.hpp"
 
 struct mmo_dis_server discord_server;
 static uint32 bind_ip = INADDR_ANY;
@@ -139,7 +103,7 @@ int disif_parse_message_from_disc(int fd) {
 	safestrncpy(username, RFIFOCP(fd, 24), NAME_LENGTH);
 	safestrncpy(msg, RFIFOCP(fd, 48), CHAT_SIZE_MAX - 4 - strlen(channel->alias) - strlen(username));
 
-	safesnprintf(output, CHAT_SIZE_MAX, "%s %s : %s", channel->alias, username, RFIFOCP(fd, 48));
+	safesnprintf(output, CHAT_SIZE_MAX, "%s %s : %s", channel->alias, username, msg);
 	clif_channel_msg(channel, output, channel->color);
 
 
@@ -158,7 +122,6 @@ int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 
 	if (!channel || !msg || discord_server.fd == -1)
 		return 0;
-	ShowInfo("Sending message %s\n", msg);
 	msg_len = (unsigned short)(strlen(msg) + 1);
 
 	if (msg_len > CHAT_SIZE_MAX - 24) {
@@ -171,7 +134,7 @@ int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 	WFIFOW(discord_server.fd, 0) = 0xD04;
 	WFIFOW(discord_server.fd, 2) = len;
 	WFIFOB(discord_server.fd, 4) = '#';
-	safestrncpy(WFIFOCP(discord_server.fd, 5), channel->name, 20);
+	safestrncpy(WFIFOCP(discord_server.fd, 5), channel->name, 19);
 	safestrncpy(WFIFOCP(discord_server.fd, 24), msg, msg_len);
 	WFIFOSET(discord_server.fd, len);
 	return 0;
@@ -246,7 +209,6 @@ int disif_parse(int fd) {
 	if (RFIFOREST(fd) < 2)
 		return 0;
 
-	ShowInfo("Disif_parse called!\n");
 	int cmd;
 	int len = 0;
 	cmd = RFIFOW(fd, 0);
