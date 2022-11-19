@@ -597,7 +597,7 @@ int make_listen_bind(uint32 ip, uint16 port)
 	return fd;
 }
 
-int make_connection(uint32 ip, uint16 port, bool silent,int timeout) {
+int make_connection(uint32 ip, uint16 port, bool silent,int timeout, bool nonblocking) {
 	struct sockaddr_in remote_address;
 	int fd;
 	int result;
@@ -687,8 +687,13 @@ int make_connection(uint32 ip, uint16 port, bool silent,int timeout) {
 	}
 	// Keep the socket in non-blocking mode, since we would set it to non-blocking here on unix. [Lemongrass]
 #else
+	if (nonblocking)
+		set_nonblocking(fd, 1);
 	result = sConnect(fd, (struct sockaddr *)(&remote_address), sizeof(struct sockaddr_in));
 	if( result == SOCKET_ERROR ) {
+		if (nonblocking && errno == EINPROGRESS) {
+			return fd;
+		}
 		if( !silent )
 			ShowError("make_connection: connect failed (socket #%d, %s)!\n", fd, error_msg());
 		do_close(fd);
@@ -718,6 +723,33 @@ int make_connection(uint32 ip, uint16 port, bool silent,int timeout) {
 
 	create_session(fd, recv_to_fifo, send_from_fifo, default_func_parse);
 	session[fd]->client_addr = ntohl(remote_address.sin_addr.s_addr);
+
+	return fd;
+}
+
+/**
+ * For use with the non-blocking make_connection, add the fd to readfds
+ */
+int add_readfd(int fd, uint32 ip) {
+#ifndef SOCKET_EPOLL
+	// Select Based Event Dispatcher
+	sFD_SET(fd,&readfds);
+#else
+	// Epoll based Event Dispatcher
+	epevent.data.fd = fd;
+	epevent.events = EPOLLIN;
+
+	if( epoll_ctl( epfd, EPOLL_CTL_ADD, fd, &epevent ) == SOCKET_ERROR ){
+		ShowError( "make_connection: failed to add socket #%d to epoll event dispatcher: %s\n", fd, error_msg() );
+		sClose(fd);
+		return -1;
+	}
+#endif
+
+	if (fd_max <= fd) fd_max = fd + 1;
+
+	create_session(fd, recv_to_fifo, send_from_fifo, default_func_parse);
+	session[fd]->client_addr = ip;
 
 	return fd;
 }
@@ -1439,7 +1471,8 @@ void do_close(int fd)
 
 #ifndef SOCKET_EPOLL
 	// Select based Event Dispatcher
-	sFD_CLR(fd, &readfds);// this needs to be done before closing the socket
+	if (sFD_ISSET(fd, &readfds))
+		sFD_CLR(fd, &readfds);// this needs to be done before closing the socket
 #else
 	// Epoll based Event Dispatcher
 	epevent.data.fd = fd;

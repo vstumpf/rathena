@@ -3994,15 +3994,10 @@ int map_config_read(const char *cfgName)
 			msg_silent = atoi(w2);
 			if( msg_silent ) // only bother if its actually enabled
 				ShowInfo("Console Silent Setting: %d\n", atoi(w2));
-		}
-		else if (strcmpi(w1, "userid") == 0) {
+		} else if (strcmpi(w1, "userid")==0)
 			chrif_setuserid(w2);
-			disif_setuserid(w2);
-		}
-		else if (strcmpi(w1, "passwd") == 0) {
+		else if (strcmpi(w1, "passwd") == 0)
 			chrif_setpasswd(w2);
-			disif_setpasswd(w2);
-		}
 		else if (strcmpi(w1, "char_ip") == 0)
 			char_ip_set = chrif_setip(w2);
 		else if (strcmpi(w1, "char_port") == 0)

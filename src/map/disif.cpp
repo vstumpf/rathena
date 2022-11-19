@@ -18,13 +18,10 @@
 #include "clif.hpp"
 #include "channel.hpp"
 
-struct mmo_dis_server discord_server;
-static uint32 bind_ip = INADDR_ANY;
-static uint32 dis_port = 5131;
-static char userid[NAME_LENGTH];
-static char passwd[NAME_LENGTH];
+struct mmo_dis_server discord;
 
-int discord_fd;
+static TIMER_FUNC(check_connect_discord_server);
+static TIMER_FUNC(check_accept_discord_server);
 
 // Received packet Lengths from discord-server
 int dis_recv_packet_length[] = {
@@ -34,38 +31,45 @@ int dis_recv_packet_length[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  //0D30
 };
 
+// says whether the discord server is connected or not
+int disif_isconnected(void) {
+	return (session_isValid(discord.fd) && discord.state == DiscordState::connected);
+}
+
+
 /**
-* Parse discord server login attempt 
+ * Map-serv request to login into discord-server
+ * @param fd : discord-server fd to log into
+ * @return 0:request sent
+ * 0D01 <user id>.24B <password>.24B (DZ_ENTER)
+ */
+int disif_connect(int fd) {
+	ShowStatus("Logging in to discord server...\n");
+	WFIFOHEAD(fd, 50);
+	WFIFOW(fd,0) = 0xd01;
+	memcpy(WFIFOP(fd,2), discord.username, NAME_LENGTH);
+	memcpy(WFIFOP(fd,26), discord.token, NAME_LENGTH);
+	WFIFOSET(fd,50);
+
+	return 0;
+}
+
+/**
+* Parse discord server login attempt ack
 * @param fd : file descriptor to parse, (link to discord)
-* 0D01 <user id>.24B <password>.24B (DZ_ENTER)
+* 0D02 <error code>.B
 */
-int disif_parse_login(int fd) {
-	if (RFIFOREST(fd) < 50)
+int disif_parse_loginack(int fd) {
+	if (RFIFOREST(fd) < 3)
 		return 0;
-	else {
-		int i;
-		char* l_user = RFIFOCP(fd, 2);
-		char* l_pass = RFIFOCP(fd, 26);
-		l_user[23] = '\0';
-		l_pass[23] = '\0';
-		RFIFOSKIP(fd, 50);
-		if (runflag != MAPSERVER_ST_RUNNING ||
-			strcmp(l_user, userid) != 0 ||
-			strcmp(l_pass, passwd) != 0) {
-			ShowInfo("Rejected Discord server connection attempt\n");
-			disif_connectack(fd, 3); //fail
-		}
-		else {
-			disif_connectack(fd, 0); //success
-
-			discord_server.fd = fd;
-			ShowInfo("Discord server has connected\n");
-
-			session[fd]->func_parse = disif_parse;
-			session[fd]->flag.server = 1;
-			realloc_fifo(fd, FIFOSIZE_SERVERLINK, FIFOSIZE_SERVERLINK);
-		}
+	char error = RFIFOB(fd, 2);
+	RFIFOSKIP(fd, 3);
+	if (error) {
+		ShowInfo("Discord server rejected connection\n");
+		return 1;
 	}
+
+	ShowInfo("Discord server has connected\n");
 	return 0;
 }
 
@@ -120,7 +124,7 @@ int disif_parse_message_from_disc(int fd) {
 int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 	unsigned short msg_len = 0, len = 0;
 
-	if (!channel || !msg || discord_server.fd == -1)
+	if (!channel || !msg || discord.fd == -1)
 		return 0;
 	msg_len = (unsigned short)(strlen(msg) + 1);
 
@@ -130,38 +134,24 @@ int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 
 	len = msg_len + 24;
 
-	WFIFOHEAD(discord_server.fd, len);
-	WFIFOW(discord_server.fd, 0) = 0xD04;
-	WFIFOW(discord_server.fd, 2) = len;
-	WFIFOB(discord_server.fd, 4) = '#';
-	safestrncpy(WFIFOCP(discord_server.fd, 5), channel->name, 19);
-	safestrncpy(WFIFOCP(discord_server.fd, 24), msg, msg_len);
-	WFIFOSET(discord_server.fd, len);
+	WFIFOHEAD(discord.fd, len);
+	WFIFOW(discord.fd, 0) = 0xD04;
+	WFIFOW(discord.fd, 2) = len;
+	WFIFOB(discord.fd, 4) = '#';
+	safestrncpy(WFIFOCP(discord.fd, 5), channel->name, 19);
+	safestrncpy(WFIFOCP(discord.fd, 24), msg, msg_len);
+	WFIFOSET(discord.fd, len);
 	return 0;
 }
 
-// sets map-server's user id
-void disif_setuserid(char *id) {
-	memcpy(userid, id, NAME_LENGTH);
+// sets map-server's username for discord
+void disif_setusername(char *id) {
+	memcpy(discord.username, id, NAME_LENGTH);
 }
 
-// sets map-server's password
-void disif_setpasswd(char *pwd) {
-	memcpy(passwd, pwd, NAME_LENGTH);
-}
-
-
-/**
-* Inform the discord server whether his login attempt to us was a success or not
-* @param fd : file descriptor to parse, (link to discord)
-* @param errCode 0:success, 3:fail
-* 0D02 <error code>.B 
-*/
-void disif_connectack(int fd, uint8 errCode) {
-	WFIFOHEAD(fd, 3);
-	WFIFOW(fd, 0) = 0x0d02;
-	WFIFOB(fd, 2) = errCode;
-	WFIFOSET(fd, 3);
+// sets map-server's token for discord
+void disif_settoken(char *pwd) {
+	memcpy(discord.token, pwd, NAME_LENGTH);
 }
 
 
@@ -193,7 +183,7 @@ int dis_check_length(int fd, int length)
 * @return 0=invalid server,marked for disconnection,unknow packet; 1=success
 */
 int disif_parse(int fd) {
-	if (discord_server.fd != fd) {
+	if (discord.fd != fd) {
 		ShowDebug("disif_parse: Disconnecting invalid session #%d (is not a discord-server)\n", fd);
 		do_close(fd);
 		return 0;
@@ -201,7 +191,7 @@ int disif_parse(int fd) {
 	if (session[fd]->flag.eof)
 	{
 		do_close(fd);
-		discord_server.fd = -1;
+		discord.fd = -1;
 		disif_on_disconnect();
 		return 0;
 	}
@@ -249,7 +239,7 @@ int disif_parse(int fd) {
 			return 0; // not enough data received to form the packet
 
 		switch (RFIFOW(fd, 0)) {
-		case 0x0d01: next = disif_parse_login(fd); return 0;
+		case 0x0d02: next = disif_parse_loginack(fd); return 0;
 		case 0x0d03: next = disif_parse_message_from_disc(fd); break;
 		default:
 			ShowError("Unknown packet 0x%04x from discord server, disconnecting.\n", RFIFOW(fd, 0));
@@ -263,27 +253,166 @@ int disif_parse(int fd) {
 }
 
 
+int disif_setip(const char* ip) {
+	char ip_str[16];
+
+	if (!(discord.ip = host2ip(ip))) {
+		ShowWarning("Failed to Resolve Discord Server Address! (%s)\n", ip);
+
+		return 0;
+	}
+
+	ShowInfo("Discord Server IP Address : '" CL_WHITE "%s" CL_RESET "' -> '" CL_WHITE "%s" CL_RESET "'.\n", ip, ip2str(discord.ip, ip_str));
+	return 1;
+}
+
+void disif_setport(uint16 port) {
+	discord.port = port;
+}
+
 /**
 * Called when the connection to discord Server is disconnected.
 */
 void disif_on_disconnect() {
 	ShowStatus("Discord-server has disconnected.\n");
+
+	add_timer(gettick() + 1000, check_connect_discord_server, 0, 0);
 }
 
+/*==========================================
+ * timerFunction
+  * Chk the connection to discord server, (if it down)
+ *------------------------------------------*/
+static TIMER_FUNC(check_connect_discord_server){
+	static int displayed = 0;
+	if (discord.fd <= 0 || session[discord.fd] == NULL) {
+		if (!displayed) {
+			ShowStatus("Attempting to connect to Discord Server. Please wait.\n");
+			displayed = 1;
+		}
+
+		if (discord.state == DiscordState::connencting) {
+			// after 10 seconds, just close
+			ShowError("10 seconds waiting for accept from discord server, restarting connection\n");
+			do_close(discord.fd);
+			delete_timer(discord.accept_timer, check_accept_discord_server);
+			discord.state = DiscordState::disconnected;
+		}
+
+		discord.fd = make_connection(discord.ip, discord.port, false, 10, true);
+
+		if (discord.fd == -1) { // Attempt to connect later. [Skotlex]
+			ShowInfo("make_connection failed, will retry in 10 seconds\n");
+			return 0;
+		}
+
+		discord.state = DiscordState::connencting;
+		discord.accept_timer = add_timer(gettick() + 1000, check_accept_discord_server, 0, 0);
+	}
+
+	if (disif_isconnected())
+		displayed = 0;
+
+	return 0;
+}
+
+/**
+ * Use a non-blocking select to check if discord fd is connected
+ */
+static TIMER_FUNC(check_accept_discord_server) {
+	discord.accept_timer = 0;
+	if (discord.fd <= 0) {
+		ShowError("Discord Server fd invalid, can't accept\n");
+		return 0;
+	}
+
+	fd_set dfd;
+	FD_ZERO(&dfd);
+	FD_SET(discord.fd, &dfd);
+
+	struct timeval tv;
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+
+	auto ret = select(discord.fd + 1, nullptr, &dfd, nullptr, &tv);
+	if (ret < 0) {
+		ShowError("Select failed!\n");
+		discord.fd = 0;
+		discord.state = DiscordState::disconnected;
+		return 0;
+	} else if (ret == 0) {
+		ShowInfo("Still haven't connected to discord server, will retry in 1s\n");
+		discord.accept_timer = add_timer(gettick() + 1000, check_accept_discord_server, 0, 0);
+		return 0;
+	}
+	ShowInfo("Discord server connection was accepted!\n");
+	add_readfd(discord.fd, discord.ip);
+	discord.state = DiscordState::connected;
+	session[discord.fd]->func_parse = disif_parse;
+	session[discord.fd]->flag.server = 1;
+	realloc_fifo(discord.fd, FIFOSIZE_SERVERLINK, FIFOSIZE_SERVERLINK);
+
+	disif_connect(discord.fd);
+	return 0;
+}
 
 /*==========================================
-* Sets discord port to 'port'
-*------------------------------------------*/
-void disif_setport(uint16 port)
+ * Read discord server configuration files (conf/discord_athena.conf...)
+ *------------------------------------------*/
+int discord_config_read(const char *cfgName)
 {
-	dis_port = port;
+	char line[1024], w1[32], w2[1024];
+	FILE *fp;
+
+	fp = fopen(cfgName,"r");
+	if(fp == NULL) {
+		ShowError("Discord configuration file not found at: %s\n", cfgName);
+		return 1;
+	}
+
+	while(fgets(line, sizeof(line), fp)) {
+		char* ptr;
+
+		if( line[0] == '/' && line[1] == '/' )
+			continue;
+		if( (ptr = strstr(line, "//")) != NULL )
+			*ptr = '\n'; //Strip comments
+		if( sscanf(line, "%31[^:]: %1023[^\t\r\n]", w1, w2) < 2 )
+			continue;
+
+		//Strip trailing spaces
+		ptr = w2 + strlen(w2);
+		while (--ptr >= w2 && *ptr == ' ');
+		ptr++;
+		*ptr = '\0';
+
+		if (strcmpi(w1, "username") == 0) {
+			disif_setusername(w2);
+		}
+		else if (strcmpi(w1, "token") == 0) {
+			disif_settoken(w2);
+		}
+		else if (strcmpi(w1, "discord_ip") == 0)
+			disif_setip(w2);
+		else if (strcmpi(w1, "discord_port") == 0)
+			disif_setport(atoi(w2));
+		else if (strcmpi(w1, "import") == 0)
+			discord_config_read(w2);
+		else
+			ShowWarning("Unknown setting '%s' in file %s\n", w1, cfgName);
+	}
+
+	fclose(fp);
+	return 0;
 }
 
 void do_init_disif(void) {
-	if ((discord_fd = make_listen_bind(bind_ip, dis_port)) == -1) {
-		ShowFatalError("Failed to bind to port '" CL_WHITE "%d" CL_RESET "'\n", dis_port);
-		exit(EXIT_FAILURE);
-	}
+	discord_config_read("conf/discord_athena.conf");
+
+	add_timer_func_list(check_connect_discord_server, "check_connect_discord_server");
+
+	// establish map-discord connection if not present
+	add_timer_interval(gettick() + 1000, check_connect_discord_server, 0, 0, 10 * 1000);
 }
 
 void do_final_disif(void) {

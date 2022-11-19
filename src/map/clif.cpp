@@ -34,7 +34,6 @@
 #include "chrif.hpp"
 #include "clan.hpp"
 #include "clif.hpp"
-#include "disif.hpp"
 #include "elemental.hpp"
 #include "guild.hpp"
 #include "homunculus.hpp"
@@ -24963,11 +24962,6 @@ static int clif_parse(int fd)
 		cmd = (cmd ^ ((((clif_cryptKey[0] * clif_cryptKey[1]) + clif_cryptKey[2]) >> 16) & 0x7FFF));
 	}
 #endif
-
-	if (cmd == 0xd01) { //discord daemon, go to disif!
-		disif_parse_login(fd);
-		return 0;
-	}
 
 	// filter out invalid / unsupported packets
 	if (cmd > MAX_PACKET_DB || cmd < MIN_PACKET_DB || packet_db[cmd].len == 0) {
