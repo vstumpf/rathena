@@ -275,8 +275,9 @@ void disif_setport(uint16 port) {
 */
 void disif_on_disconnect() {
 	ShowStatus("Discord-server has disconnected.\n");
-
-	add_timer(gettick() + 1000, check_connect_discord_server, 0, 0);
+	if (discord.connect_timer)
+		delete_timer(discord.connect_timer, check_connect_discord_server);
+	discord.connect_timer = add_timer(gettick() + 1000, check_connect_discord_server, 0, 0);
 }
 
 /*==========================================
@@ -284,12 +285,10 @@ void disif_on_disconnect() {
   * Chk the connection to discord server, (if it down)
  *------------------------------------------*/
 static TIMER_FUNC(check_connect_discord_server){
-	static int displayed = 0;
+	discord.connect_timer = 0;
+	discord.connect_seconds += 5;
 	if (discord.fd <= 0 || session[discord.fd] == NULL) {
-		if (!displayed) {
-			ShowStatus("Attempting to connect to Discord Server. Please wait.\n");
-			displayed = 1;
-		}
+		ShowStatus("Attempting to connect to Discord Server. Please wait.\n");
 
 		if (discord.state == DiscordState::connencting) {
 			// after 10 seconds, just close
@@ -297,21 +296,21 @@ static TIMER_FUNC(check_connect_discord_server){
 			do_close(discord.fd);
 			delete_timer(discord.accept_timer, check_accept_discord_server);
 			discord.state = DiscordState::disconnected;
+			discord.connect_timer = add_timer(gettick() + 1000, check_connect_discord_server, 0, 0);
+			return 0;
 		}
 
 		discord.fd = make_connection(discord.ip, discord.port, false, 10, true);
 
 		if (discord.fd == -1) { // Attempt to connect later. [Skotlex]
-			ShowInfo("make_connection failed, will retry in 10 seconds\n");
+			ShowInfo("make_connection failed, will retry in %s seconds\n", discord.connect_seconds);
+			discord.connect_timer = add_timer(gettick() + (discord.connect_seconds * 1000), check_connect_discord_server, 0, 0);
 			return 0;
 		}
 
 		discord.state = DiscordState::connencting;
 		discord.accept_timer = add_timer(gettick() + 1000, check_accept_discord_server, 0, 0);
 	}
-
-	if (disif_isconnected())
-		displayed = 0;
 
 	return 0;
 }
@@ -336,13 +335,30 @@ static TIMER_FUNC(check_accept_discord_server) {
 
 	auto ret = select(discord.fd + 1, nullptr, &dfd, nullptr, &tv);
 	if (ret < 0) {
-		ShowError("Select failed!\n");
+		ShowError("Discord select failed, retrying in %d seconds\n", discord.connect_seconds);
 		discord.fd = 0;
 		discord.state = DiscordState::disconnected;
+		if (!discord.connect_timer) {
+			discord.connect_timer = add_timer(gettick() + (discord.connect_seconds * 1000), check_connect_discord_server, 0, 0);
+		}
 		return 0;
 	} else if (ret == 0) {
-		ShowInfo("Still haven't connected to discord server, will retry in 1s\n");
+		// ShowInfo("Still haven't connected to discord server, will retry in 1s\n");
 		discord.accept_timer = add_timer(gettick() + 1000, check_accept_discord_server, 0, 0);
+		return 0;
+	}
+	int err = 0;
+	socklen_t err_len = sizeof(err);
+	if (getsockopt(discord.fd, SOL_SOCKET, SO_ERROR, &err, &err_len)) {
+		ShowError("getsockopt failed!?\n");
+	}
+	if (err) {
+		ShowError("Discord connect failed, retrying in %d seconds\n", discord.connect_seconds);
+		discord.fd = 0;
+		discord.state = DiscordState::disconnected;
+		if (!discord.connect_timer) {
+			discord.connect_timer = add_timer(gettick() + (discord.connect_seconds * 1000), check_connect_discord_server, 0, 0);
+		}
 		return 0;
 	}
 	ShowInfo("Discord server connection was accepted!\n");
@@ -352,6 +368,12 @@ static TIMER_FUNC(check_accept_discord_server) {
 	session[discord.fd]->flag.server = 1;
 	realloc_fifo(discord.fd, FIFOSIZE_SERVERLINK, FIFOSIZE_SERVERLINK);
 
+	if (discord.connect_timer) {
+		delete_timer(discord.connect_timer, check_connect_discord_server);
+		discord.connect_timer = 0;
+	}
+
+	discord.connect_seconds = 10;
 	disif_connect(discord.fd);
 	return 0;
 }
@@ -410,9 +432,11 @@ void do_init_disif(void) {
 	discord_config_read("conf/discord_athena.conf");
 
 	add_timer_func_list(check_connect_discord_server, "check_connect_discord_server");
+	add_timer_func_list(check_accept_discord_server, "check_accept_discord_server");
 
 	// establish map-discord connection if not present
-	add_timer_interval(gettick() + 1000, check_connect_discord_server, 0, 0, 10 * 1000);
+	discord.connect_timer = add_timer(gettick() + 1000, check_connect_discord_server, 0, 0);
+	discord.connect_seconds = 10;
 }
 
 void do_final_disif(void) {

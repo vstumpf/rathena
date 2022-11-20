@@ -21,6 +21,9 @@ struct mmo_dis_server {
 	char token[NAME_LENGTH];
 	DiscordState state{DiscordState::disconnected};
 
+	int connect_timer;
+	// the amount of seconds to wait before next connect attempt
+	int connect_seconds;
 	int accept_timer;
 };
 
