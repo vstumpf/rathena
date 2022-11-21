@@ -25,7 +25,7 @@ static TIMER_FUNC(check_accept_discord_server);
 
 // Received packet Lengths from discord-server
 int dis_recv_packet_length[] = {
-	0, 50, 3, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D00
+	0, 43, 3, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D00
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D10
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D20
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  //0D30
@@ -41,15 +41,15 @@ int disif_isconnected(void) {
  * Map-serv request to login into discord-server
  * @param fd : discord-server fd to log into
  * @return 0:request sent
- * 0D01 <user id>.24B <password>.24B (DZ_ENTER)
+ * 0D01 <server_id>.Q <token>.24B (DZ_CONNECT)
  */
 int disif_connect(int fd) {
 	ShowStatus("Logging in to discord server...\n");
 	WFIFOHEAD(fd, 50);
 	WFIFOW(fd,0) = 0xd01;
-	memcpy(WFIFOP(fd,2), discord.username, NAME_LENGTH);
-	memcpy(WFIFOP(fd,26), discord.token, NAME_LENGTH);
-	WFIFOSET(fd,50);
+	WFIFOQ(fd,2) = discord.server_id;
+	memcpy(WFIFOP(fd,10), discord.token, TOKEN_LENGTH);
+	WFIFOSET(fd, 43);
 
 	return 0;
 }
@@ -209,13 +209,13 @@ int disif_parse_conf_ack(int fd) {
 }
 
 // sets map-server's username for discord
-void disif_setusername(char *id) {
-	memcpy(discord.username, id, NAME_LENGTH);
+void disif_setserverid(char *id) {
+	discord.server_id = strtoull(id, nullptr, 10);
 }
 
 // sets map-server's token for discord
 void disif_settoken(char *pwd) {
-	memcpy(discord.token, pwd, NAME_LENGTH);
+	memcpy(discord.token, pwd, TOKEN_LENGTH);
 }
 
 
@@ -505,8 +505,8 @@ int discord_config_read(const char *cfgName)
 		ptr++;
 		*ptr = '\0';
 
-		if (strcmpi(w1, "username") == 0) {
-			disif_setusername(w2);
+		if (strcmpi(w1, "server_id") == 0) {
+			disif_setserverid(w2);
 		}
 		else if (strcmpi(w1, "token") == 0) {
 			disif_settoken(w2);

@@ -7,6 +7,8 @@
 
 #include "channel.hpp"
 
+#define TOKEN_LENGTH 32 + 1
+
 enum class DiscordState {
 	disconnected,
 	connencting,
@@ -25,8 +27,8 @@ struct mmo_dis_server {
 	int fd;
 	uint32 ip;
 	uint16 port;
-	char username[NAME_LENGTH];
-	char token[NAME_LENGTH];
+	uint64 server_id;
+	char token[TOKEN_LENGTH];
 	DiscordState state{DiscordState::disconnected};
 
 	int connect_timer;
