@@ -77,13 +77,12 @@ int disif_parse_loginack(int fd) {
 /**
 * Parse discord server message and send to chat channel
 * @param fd : file descriptor to parse
-* 0D03 <packet len>.W <channel name>.20B <user name>.24B <message>.?B
+* 0D03 <packet len>.W <channel id>.Q <user name>.24B <message>.?B
 */
 
 int disif_parse_message_from_disc(int fd) {
 	int len;
-	struct Channel * channel;
-	char channel_name[CHAN_NAME_LENGTH];
+	struct Channel * channel = nullptr;
 	char username[NAME_LENGTH];
 	char msg[CHAT_SIZE_MAX];
 	char output[CHAT_SIZE_MAX];
@@ -96,21 +95,25 @@ int disif_parse_message_from_disc(int fd) {
 	if (RFIFOREST(fd) < len)
 		return 0;
 
-	safestrncpy(channel_name, RFIFOCP(fd, 4), CHAN_NAME_LENGTH);
+	auto channel_id = RFIFOQ(fd, 4);
 
-	channel = channel_name2channel(channel_name, NULL, 0);
+	for (int i = 0; i < MAX_CHANNELS; i++) {
+		auto &chn = discord.channels[i];
+		if (chn.disc_channel_id == channel_id) {
+			channel = chn.channel;
+		}
+	}
 
-	if (channel == NULL) {
-		ShowInfo("Discord server sending to non-existing channel %s\n", channel_name);
+	if (channel == nullptr) {
+		ShowWarning("Discord server sending to non-existing channel %llu, REPORT THIS!\n", channel_id);
 		return 1;
 	}
 	
-	safestrncpy(username, RFIFOCP(fd, 24), NAME_LENGTH);
-	safestrncpy(msg, RFIFOCP(fd, 48), CHAT_SIZE_MAX - 4 - strlen(channel->alias) - strlen(username));
+	safestrncpy(username, RFIFOCP(fd, 12), NAME_LENGTH);
+	safestrncpy(msg, RFIFOCP(fd, 36), CHAT_SIZE_MAX - 4 - strlen(channel->alias) - strlen(username));
 
 	safesnprintf(output, CHAT_SIZE_MAX, "%s %s : %s", channel->alias, username, msg);
 	clif_channel_msg(channel, output, channel->color);
-
 
 	return 1;
 }
@@ -120,7 +123,7 @@ int disif_parse_message_from_disc(int fd) {
 * Send channel message to discord server
 * @param channel : channel that sent the message
 * @param msg : message that was sent
-* 0D04 <packet len>.W <channel name>.20B <message>.?B
+* 0D04 <packet len>.W <channel id>.Q <message>.?B
 */
 int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 	unsigned short msg_len = 0, len = 0;
@@ -129,18 +132,17 @@ int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 		return 0;
 	msg_len = (unsigned short)(strlen(msg) + 1);
 
-	if (msg_len > CHAT_SIZE_MAX - 24) {
-		msg_len = CHAT_SIZE_MAX - 24;
+	if (msg_len > CHAT_SIZE_MAX - 12) {
+		msg_len = CHAT_SIZE_MAX - 12;
 	}
 
-	len = msg_len + 24;
+	len = msg_len + 12;
 
 	WFIFOHEAD(discord.fd, len);
 	WFIFOW(discord.fd, 0) = 0xD04;
 	WFIFOW(discord.fd, 2) = len;
-	WFIFOB(discord.fd, 4) = '#';
-	safestrncpy(WFIFOCP(discord.fd, 5), channel->name, 19);
-	safestrncpy(WFIFOCP(discord.fd, 24), msg, msg_len);
+	WFIFOQ(discord.fd, 4) = channel->discord_id;
+	safestrncpy(WFIFOCP(discord.fd, 12), msg, msg_len);
 	WFIFOSET(discord.fd, len);
 	return 0;
 }
