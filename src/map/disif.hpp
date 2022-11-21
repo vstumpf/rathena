@@ -13,6 +13,14 @@ enum class DiscordState {
 	connected
 };
 
+// must be below 10
+#define MAX_CHANNELS 5
+
+struct discord_channel {
+	uint64 disc_channel_id;
+	Channel *channel;
+};
+
 struct mmo_dis_server {
 	int fd;
 	uint32 ip;
@@ -25,6 +33,8 @@ struct mmo_dis_server {
 	// the amount of seconds to wait before next connect attempt
 	int connect_seconds;
 	int accept_timer;
+
+	struct discord_channel channels[MAX_CHANNELS];
 };
 
 
@@ -32,6 +42,10 @@ int disif_parse_loginack(int fd);
 int disif_parse_message_from_disc(int fd);
 int disif_send_message_to_disc(struct Channel *channel, char *msg);
 
+int disif_send_conf();
+
+int disif_setdiscchannel(const char * w1, const char * w2);
+int disif_setrochannel(const char * w1, const char * w2);
 
 void disif_connectack(int fd, uint8 errCode);
 void do_init_disif(void);

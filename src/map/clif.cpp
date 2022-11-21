@@ -74,6 +74,7 @@ static inline int32 client_exp(t_exp exp) {
 	return (int32)u64min(exp, MAX_EXP);
 }
 #endif
+
 /* for clif_clearunit_delayed */
 static struct eri *delay_clearunit_ers;
 

@@ -456,7 +456,7 @@ int channel_send(struct Channel *channel, struct map_session_data *sd, const cha
 			color = channel_config.colors[sd->fontcolor];
 		safesnprintf(output, CHAT_SIZE_MAX, "%s %s : %s", channel->alias, sd->status.name, msg);
 		clif_channel_msg(channel,output,color);
-		if (channel->opt & CHAN_OPT_DISCORD) {
+		if (channel->discord_id) {
 			safesnprintf(output, CHAT_SIZE_MAX, "%s : %s", sd->status.name, msg);
 			disif_send_message_to_disc(channel, output);
 		}
@@ -1324,7 +1324,7 @@ unsigned long channel_getColor(const char *color_str) {
 bool channel_read_sub(config_setting_t *chan, struct Channel *tmp_chan, uint8 i) {
 	config_setting_t  *group_list = NULL;
 	int delay = 1000, autojoin = 0, leave = 1, chat = 1, color_override = 0,
-		self_notif = 1, join_notif = 0, leave_notif = 0, discord = 0;
+		self_notif = 1, join_notif = 0, leave_notif = 0;
 	int64 type = CHAN_TYPE_PUBLIC;
 	int group_count = 0;
 	const char *name = NULL, *password = NULL, *alias = NULL, *color_str = "Default", *type_str = NULL;
@@ -1351,7 +1351,6 @@ bool channel_read_sub(config_setting_t *chan, struct Channel *tmp_chan, uint8 i)
 	config_setting_lookup_bool(chan, "self_notif", &self_notif);
 	config_setting_lookup_bool(chan, "join_notif", &join_notif);
 	config_setting_lookup_bool(chan, "leave_notif", &leave_notif);
-	config_setting_lookup_bool(chan, "discord", &discord);
 
 	safestrncpy(tmp_chan->name,name+1,sizeof(tmp_chan->name));
 	if (password)
@@ -1369,8 +1368,7 @@ bool channel_read_sub(config_setting_t *chan, struct Channel *tmp_chan, uint8 i)
 		(color_override ? CHAN_OPT_COLOR_OVERRIDE : 0) |
 		(self_notif ? CHAN_OPT_ANNOUNCE_SELF : 0) |
 		(join_notif ? CHAN_OPT_ANNOUNCE_JOIN : 0) |
-		(leave_notif ? CHAN_OPT_ANNOUNCE_LEAVE : 0) |
-		(discord ? CHAN_OPT_DISCORD : 0);
+		(leave_notif ? CHAN_OPT_ANNOUNCE_LEAVE : 0);
 
 	if ((group_list = config_setting_get_member(chan, "groupid")) && (group_count = config_setting_length(group_list)) > 0) {
 		int j;

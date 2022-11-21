@@ -5258,7 +5258,6 @@ int do_init(int argc, char *argv[])
 	do_init_clan();
 #ifndef MAP_GENERATOR
 	do_init_clif();
-	do_init_disif();
 #endif
 	do_init_script();
 	do_init_itemdb();
@@ -5284,6 +5283,9 @@ int do_init(int argc, char *argv[])
 	do_init_vending();
 	do_init_buyingstore();
 
+#ifndef MAP_GENERATOR
+	do_init_disif();
+#endif
 	npc_event_do_oninit();	// Init npcs (OnInit)
 
 	if (battle_config.pk_mode)

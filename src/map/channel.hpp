@@ -26,7 +26,6 @@ enum Channel_Opt {
 	CHAN_OPT_CAN_CHAT		= 0x20,	///< Allows player to chat in the channel
 	CHAN_OPT_CAN_LEAVE		= 0x40,	///< Allows player to leave the channel
 	CHAN_OPT_AUTOJOIN		= 0x80,	///< Player will be autojoined to the channel
-	CHAN_OPT_DISCORD		= 0x100, // Forward messages to discord
 
 	CHAN_OPT_BASE = CHAN_OPT_ANNOUNCE_SELF|CHAN_OPT_MSG_DELAY|CHAN_OPT_CAN_CHAT|CHAN_OPT_CAN_LEAVE,
 };
@@ -45,7 +44,7 @@ struct Channel {
 	char alias[CHAN_NAME_LENGTH]; ///< Channel display name
 	enum Channel_Type type;		  ///< Channel type @see enum Channel_Type
 	unsigned long color;		  ///< Channel color in BGR
-	unsigned int opt;			  ///< Channel options @see enum Channel_Opt
+	unsigned char opt;			  ///< Channel options @see enum Channel_Opt
 	unsigned short msg_delay;	  ///< Chat delay in miliseconds
 	unsigned int char_id;		  ///< If CHAN_TYPE_PRIVATE, owner is char_id of channel creator
 	uint16 m;					  ///< If CHAN_TYPE_MAP, owner is map id
@@ -54,6 +53,7 @@ struct Channel {
 	DBMap *banned;				  ///< List of banned chars -> char_id
 	unsigned short group_count;	  ///< Number of group id
 	unsigned short *groups;		  ///< List of group id, only these groups can join the channel
+	uint64 discord_id;			  // Discord channel to forward to
 };
 
 struct chan_banentry {

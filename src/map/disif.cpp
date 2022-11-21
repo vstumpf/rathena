@@ -18,14 +18,14 @@
 #include "clif.hpp"
 #include "channel.hpp"
 
-struct mmo_dis_server discord;
+struct mmo_dis_server discord{};
 
 static TIMER_FUNC(check_connect_discord_server);
 static TIMER_FUNC(check_accept_discord_server);
 
 // Received packet Lengths from discord-server
 int dis_recv_packet_length[] = {
-	0, 50, 3, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D00
+	0, 50, 3, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D00
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D10
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D20
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  //0D30
@@ -70,6 +70,7 @@ int disif_parse_loginack(int fd) {
 	}
 
 	ShowInfo("Discord server has connected\n");
+	disif_send_conf();
 	return 0;
 }
 
@@ -142,6 +143,69 @@ int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 	safestrncpy(WFIFOCP(discord.fd, 24), msg, msg_len);
 	WFIFOSET(discord.fd, len);
 	return 0;
+}
+
+
+/**
+ * Send the channels to listen to
+ * 0D05 <packet len>.W <count>.W {<channel id>.Q}*count
+*/
+int disif_send_conf() {
+	if (discord.fd == -1)
+		return 0;
+	
+	uint16 count = 0;
+
+	WFIFOW(discord.fd, 0) = 0xD05;
+	for (int i = 0; i < MAX_CHANNELS; i++) {
+		auto &chn = discord.channels[i];
+		if (chn.disc_channel_id && chn.channel) {
+			WFIFOQ(discord.fd, 6 + count * 8) = chn.disc_channel_id;
+			count++;
+		}
+	}
+	
+	WFIFOW(discord.fd, 2) = 6 + count * 8;
+	WFIFOW(discord.fd, 4) = count;
+	WFIFOSET(discord.fd, 6 + count * 8);
+	return 1;
+}
+
+/**
+ * List of channels that have errors
+ * If count is 0, no errors!
+ * 0D06 <packet len>.W <count>.W {<channel id>.Q}*count
+*/
+int disif_parse_conf_ack(int fd) {
+	if (RFIFOREST(fd) < 4)
+		return 0;
+	
+	int len = RFIFOW(fd, 2);
+
+	if (RFIFOREST(fd) < len)
+		return 0;
+
+	int count = RFIFOW(fd, 4);
+	for (int i = 0; i < count; i++) {
+		auto id = RFIFOQ(fd, 6 + i * 8);
+		for (int j = 0; j < MAX_CHANNELS; j++) {
+			auto &chn = discord.channels[j];
+			if (id == chn.disc_channel_id) {
+				ShowError("Discord channel with id [%llu](%s) does not exist, ignoring\n", id, chn.channel->name);
+				chn.disc_channel_id = 0;
+				chn.channel->discord_id = 0;
+				chn.channel = nullptr;
+			}
+		}
+	}
+
+	for (int i = 0; i < MAX_CHANNELS; i++) {
+		auto & chn = discord.channels[i];
+		if (!chn.disc_channel_id || !chn.channel)
+			continue;
+		chn.channel->discord_id = chn.disc_channel_id;
+	}
+	return 1;
 }
 
 // sets map-server's username for discord
@@ -241,6 +305,7 @@ int disif_parse(int fd) {
 		switch (RFIFOW(fd, 0)) {
 		case 0x0d02: next = disif_parse_loginack(fd); return 0;
 		case 0x0d03: next = disif_parse_message_from_disc(fd); break;
+		case 0x0d06: next = disif_parse_conf_ack(fd); break;
 		default:
 			ShowError("Unknown packet 0x%04x from discord server, disconnecting.\n", RFIFOW(fd, 0));
 			set_eof(fd);
@@ -268,6 +333,38 @@ int disif_setip(const char* ip) {
 
 void disif_setport(uint16 port) {
 	discord.port = port;
+}
+
+int disif_setdiscchannel(const char * w1, const char * w2) {
+	w1 = w1 + strlen("discord_channel");
+	int n = strtoul(w1, nullptr, 10);
+	uint64 id = strtoull(w2, nullptr, 10);
+	if (n > MAX_CHANNELS)
+		return 0;
+
+	discord.channels[n].disc_channel_id = id;
+	ShowInfo("Set channel #%d to id %llu\n", n, id);
+	return 1;
+}
+
+int disif_setrochannel(const char * w1, const char * w2) {
+	w1 = w1 + strlen("ro_channel");
+	int n = strtoul(w1, nullptr, 10);
+	if (n >= MAX_CHANNELS)
+		return 0;
+
+	char channel_name[CHAN_NAME_LENGTH];
+
+	safestrncpy(channel_name, w2, sizeof(channel_name));
+	auto * channel = channel_name2channel(channel_name, nullptr, 0);
+	if (!channel) {
+		ShowError("Channel with name %s does not exist, ignoring for discord\n", w2);
+		return 0;
+	}
+
+	discord.channels[n].channel = channel;
+	ShowInfo("Set channel #%d to name %s\n", n, channel_name);
+	return 1;
 }
 
 /**
@@ -418,6 +515,10 @@ int discord_config_read(const char *cfgName)
 			disif_setip(w2);
 		else if (strcmpi(w1, "discord_port") == 0)
 			disif_setport(atoi(w2));
+		else if (strncmpi(w1, "discord_channel", strlen("discord_channel")) == 0)
+			disif_setdiscchannel(w1, w2);
+		else if (strncmpi(w1, "ro_channel", strlen("ro_channel")) == 0)
+			disif_setrochannel(w1, w2);
 		else if (strcmpi(w1, "import") == 0)
 			discord_config_read(w2);
 		else
@@ -430,6 +531,14 @@ int discord_config_read(const char *cfgName)
 
 void do_init_disif(void) {
 	discord_config_read("conf/discord_athena.conf");
+
+	for (int i = 0; i < MAX_CHANNELS; i++) {
+		auto &chn = discord.channels[i];
+		if (!chn.disc_channel_id || !chn.channel) {
+			chn.disc_channel_id = 0;
+			chn.channel = nullptr;
+		}
+	}
 
 	add_timer_func_list(check_connect_discord_server, "check_connect_discord_server");
 	add_timer_func_list(check_accept_discord_server, "check_accept_discord_server");
