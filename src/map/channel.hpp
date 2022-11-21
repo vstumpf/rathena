@@ -53,6 +53,7 @@ struct Channel {
 	DBMap *banned;				  ///< List of banned chars -> char_id
 	unsigned short group_count;	  ///< Number of group id
 	unsigned short *groups;		  ///< List of group id, only these groups can join the channel
+	uint64 discord_id;			  // Discord channel to forward to
 };
 
 struct chan_banentry {

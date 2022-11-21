@@ -1,0 +1,56 @@
+#pragma once
+
+#include "../config/core.hpp"
+#include "../common/core.hpp" // CORE_ST_LAST
+#include "../common/msg_conf.hpp"
+#include "../common/mmo.hpp"
+
+#include "channel.hpp"
+
+#define TOKEN_LENGTH 32 + 1
+
+enum class DiscordState {
+	disconnected,
+	connencting,
+	connected
+};
+
+// must be below 10
+#define MAX_CHANNELS 5
+
+struct discord_channel {
+	uint64 disc_channel_id;
+	Channel *channel;
+};
+
+struct mmo_dis_server {
+	int fd;
+	uint32 ip;
+	uint16 port;
+	uint64 server_id;
+	char token[TOKEN_LENGTH];
+	DiscordState state{DiscordState::disconnected};
+
+	int connect_timer;
+	// the amount of seconds to wait before next connect attempt
+	int connect_seconds;
+	int accept_timer;
+
+	struct discord_channel channels[MAX_CHANNELS];
+};
+
+
+int disif_parse_loginack(int fd);
+int disif_parse_message_from_disc(int fd);
+int disif_send_message_to_disc(struct Channel *channel, char *msg);
+
+int disif_send_conf();
+
+int disif_setdiscchannel(const char * w1, const char * w2);
+int disif_setrochannel(const char * w1, const char * w2);
+
+void disif_connectack(int fd, uint8 errCode);
+void do_init_disif(void);
+void do_final_disif(void);
+int disif_parse(int fd);
+void disif_on_disconnect();

@@ -33,6 +33,7 @@
 #include "chrif.hpp"
 #include "clan.hpp"
 #include "clif.hpp"
+#include "disif.hpp"
 #include "duel.hpp"
 #include "elemental.hpp"
 #include "guild.hpp"
@@ -4880,6 +4881,7 @@ void do_final(void){
 	do_final_clan();
 #ifndef MAP_GENERATOR
 	do_final_clif();
+	do_final_disif();
 #endif
 	do_final_npc();
 	do_final_quest();
@@ -5281,6 +5283,9 @@ int do_init(int argc, char *argv[])
 	do_init_vending();
 	do_init_buyingstore();
 
+#ifndef MAP_GENERATOR
+	do_init_disif();
+#endif
 	npc_event_do_oninit();	// Init npcs (OnInit)
 
 	if (battle_config.pk_mode)

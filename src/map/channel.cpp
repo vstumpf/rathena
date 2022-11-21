@@ -16,6 +16,7 @@
 
 #include "battle.hpp"
 #include "clif.hpp" //clif_chsys_msg
+#include "disif.hpp"
 #include "guild.hpp"
 #include "map.hpp" //msg_conf
 #include "pc.hpp"
@@ -455,6 +456,10 @@ int channel_send(struct Channel *channel, struct map_session_data *sd, const cha
 			color = channel_config.colors[sd->fontcolor];
 		safesnprintf(output, CHAT_SIZE_MAX, "%s %s : %s", channel->alias, sd->status.name, msg);
 		clif_channel_msg(channel,output,color);
+		if (channel->discord_id) {
+			safesnprintf(output, CHAT_SIZE_MAX, "%s : %s", sd->status.name, msg);
+			disif_send_message_to_disc(channel, output);
+		}
 		sd->channel_tick[idx] = gettick();
 	}
 	return 0;
