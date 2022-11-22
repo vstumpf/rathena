@@ -25,7 +25,7 @@ static TIMER_FUNC(check_accept_discord_server);
 
 // Received packet Lengths from discord-server
 int dis_recv_packet_length[] = {
-	0, 43, 3, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D00
+	0, 43, 3, -1, -1, -1, -1, 2, 2, 0, 0, 0, 0, 0, 0, 0, //0D00
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D10
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D20
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  //0D30
@@ -73,6 +73,25 @@ int disif_parse_loginack(int fd) {
 	disif_send_conf();
 	return 0;
 }
+
+/**
+ * Send keepalive to discord server
+*/
+void disif_keepalive(int fd) {
+	WFIFOHEAD(fd,2);
+	WFIFOW(fd,0) = 0xd07;
+	WFIFOSET(fd,2);
+}
+
+
+/**
+ * Parse keepalive ack from discord server
+*/
+int disif_parse_keepaliveack(int fd) {
+	session[fd]->flag.ping = 0;
+	return 1;
+}
+
 
 /**
 * Parse discord server message and send to chat channel
@@ -260,6 +279,14 @@ int disif_parse(int fd) {
 		discord.fd = -1;
 		disif_on_disconnect();
 		return 0;
+	} else if (session[fd]->flag.ping) {
+		if (DIFF_TICK(last_tick, session[fd]->rdata_tick) > (stall_time * 2)) {
+			set_eof(fd);
+			return 0;
+		} else if (session[fd]->flag.ping != 2) {
+			disif_keepalive(fd);
+			session[fd]->flag.ping = 2;
+		}
 	}
 
 	if (RFIFOREST(fd) < 2)
@@ -308,6 +335,7 @@ int disif_parse(int fd) {
 		case 0x0d02: next = disif_parse_loginack(fd); return 0;
 		case 0x0d03: next = disif_parse_message_from_disc(fd); break;
 		case 0x0d06: next = disif_parse_conf_ack(fd); break;
+		case 0x0d08: next = disif_parse_keepaliveack(fd); break;
 		default:
 			ShowError("Unknown packet 0x%04x from discord server, disconnecting.\n", RFIFOW(fd, 0));
 			set_eof(fd);
