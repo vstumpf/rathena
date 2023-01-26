@@ -172,7 +172,7 @@ namespace rathena {
 		 * @param map: Unordered Map to search through
 		 * @return A random value by reference
 		*/
-		template <typename K, typename V> V& umap_random( std::unordered_map<K, V>& map ){
+		template <typename K, typename V> V& umap_random(const std::unordered_map<K, V>& map) {
 			auto it = map.begin();
 
 			std::advance( it, rnd_value( 0, map.size() - 1 ) );

@@ -7054,7 +7054,7 @@ static bool script_getitem_randomoption(struct script_state *st, map_session_dat
  * @param rental: Whether or not to count rental items
  * @return Total count of item being searched
  */
-static int script_countitem_sub(struct item *items, std::shared_ptr<item_data> id, int size, int expanded, struct script_state *st, map_session_data *sd = nullptr, bool rental = false) {
+static int script_countitem_sub(struct item *items, const item_data &id, int size, int expanded, struct script_state *st, map_session_data *sd = nullptr, bool rental = false) {
 
 	nullpo_retr(-1, items);
 	nullpo_retr(-1, st);
@@ -7062,7 +7062,7 @@ static int script_countitem_sub(struct item *items, std::shared_ptr<item_data> i
 	int count = 0;
 
 	if (!expanded) { // For non-expanded functions
-		t_itemid nameid = id->nameid;
+		t_itemid nameid = id.nameid;
 
 		for (int i = 0; i < size; i++) {
 			item *itm = &items[i];
@@ -7076,7 +7076,7 @@ static int script_countitem_sub(struct item *items, std::shared_ptr<item_data> i
 		item it = {};
 		int offset = 10;
 
-		it.nameid = id->nameid;
+		it.nameid = id.nameid;
 		it.identify = script_getnum(st,3);
 		it.refine  = script_getnum(st,4);
 		it.attribute = script_getnum(st,5);
@@ -7164,12 +7164,12 @@ BUILDIN_FUNC(countitem)
 	if (!script_accid2sd(aid, sd))
 		return SCRIPT_CMD_FAILURE;
 
-	std::shared_ptr<item_data> id;
+	const item_data * id = nullptr;
 
 	if (script_isstring(st, 2)) // item name
-		id = item_db.searchname( script_getstr( st, 2 ) );
+		id = item_db.searchname(script_getstr(st, 2));
 	else // item id
-		id = item_db.find( script_getnum( st, 2 ) );
+		id = item_db.find_get(script_getnum(st, 2));
 
 	if (!id) {
 		ShowError("buildin_%s: Invalid item '%s'.\n", command, script_getstr(st, 2)); // returns string, regardless of what it was
@@ -7177,7 +7177,7 @@ BUILDIN_FUNC(countitem)
 		return SCRIPT_CMD_FAILURE;
 	}
 
-	int count = script_countitem_sub(sd->inventory.u.items_inventory, id, MAX_INVENTORY, expanded, st, sd);
+	int count = script_countitem_sub(sd->inventory.u.items_inventory, *id, MAX_INVENTORY, expanded, st, sd);
 	if (count < 0) {
 		st->state = END;
 		return SCRIPT_CMD_FAILURE;
@@ -7212,12 +7212,12 @@ BUILDIN_FUNC(cartcountitem)
 		return SCRIPT_CMD_FAILURE;
 	}
 
-	std::shared_ptr<item_data> id;
+	const item_data * id = nullptr;
 
 	if (script_isstring(st, 2)) // item name
-		id = item_db.searchname( script_getstr( st, 2 ) );
+		id = item_db.searchname(script_getstr(st, 2));
 	else // item id
-		id = item_db.find( script_getnum( st, 2 ) );
+		id = item_db.find_get(script_getnum(st, 2));
 
 	if (!id) {
 		ShowError("buildin_%s: Invalid item '%s'.\n", command, script_getstr(st, 2)); // returns string, regardless of what it was
@@ -7225,7 +7225,7 @@ BUILDIN_FUNC(cartcountitem)
 		return SCRIPT_CMD_FAILURE;
 	}
 
-	int count = script_countitem_sub(sd->cart.u.items_cart, id, MAX_CART, expanded, st);
+	int count = script_countitem_sub(sd->cart.u.items_cart, *id, MAX_CART, expanded, st);
 	if (count < 0) {
 		st->state = END;
 		return SCRIPT_CMD_FAILURE;
@@ -7254,12 +7254,12 @@ BUILDIN_FUNC(storagecountitem)
 	if (!script_accid2sd(aid, sd))
 		return SCRIPT_CMD_FAILURE;
 
-	std::shared_ptr<item_data> id;
+	const item_data * id = nullptr;
 
 	if (script_isstring(st, 2)) // item name
-		id = item_db.searchname( script_getstr( st, 2 ) );
+		id = item_db.searchname(script_getstr(st, 2));
 	else // item id
-		id = item_db.find( script_getnum( st, 2 ) );
+		id = item_db.find_get(script_getnum(st, 2));
 
 	if (!id) {
 		ShowError("buildin_%s: Invalid item '%s'.\n", command, script_getstr(st, 2)); // returns string, regardless of what it was
@@ -7272,7 +7272,7 @@ BUILDIN_FUNC(storagecountitem)
 		return SCRIPT_CMD_SUCCESS;
 	}
 
-	int count = script_countitem_sub(sd->storage.u.items_storage, id, MAX_STORAGE, expanded, st);
+	int count = script_countitem_sub(sd->storage.u.items_storage, *id, MAX_STORAGE, expanded, st);
 	if (count < 0) {
 		st->state = END;
 		return SCRIPT_CMD_FAILURE;
@@ -7301,12 +7301,12 @@ BUILDIN_FUNC(guildstoragecountitem)
 	if (!script_accid2sd(aid, sd))
 		return SCRIPT_CMD_FAILURE;
 
-	std::shared_ptr<item_data> id;
+	const item_data * id = nullptr;
 
 	if (script_isstring(st, 2)) // item name
-		id = item_db.searchname( script_getstr( st, 2 ) );
+		id = item_db.searchname(script_getstr(st, 2));
 	else // item id
-		id = item_db.find( script_getnum( st, 2 ) );
+		id = item_db.find_get(script_getnum(st, 2));
 
 	if (!id) {
 		ShowError("buildin_%s: Invalid item '%s'.\n", command, script_getstr(st, 2)); // returns string, regardless of what it was
@@ -7323,7 +7323,7 @@ BUILDIN_FUNC(guildstoragecountitem)
 
 	gstor->lock = true;
 
-	int count = script_countitem_sub(gstor->u.items_guild, id, MAX_GUILD_STORAGE, expanded, st);
+	int count = script_countitem_sub(gstor->u.items_guild, *id, MAX_GUILD_STORAGE, expanded, st);
 
 	storage_guild_storageclose(sd);
 	gstor->lock = false;
@@ -7368,12 +7368,12 @@ BUILDIN_FUNC(rentalcountitem)
 	if (!script_accid2sd(aid, sd))
 		return SCRIPT_CMD_FAILURE;
 
-	std::shared_ptr<item_data> id;
+	const item_data * id = nullptr;
 
 	if (script_isstring(st, 2)) // item name
-		id = item_db.searchname( script_getstr( st, 2 ) );
+		id = item_db.searchname(script_getstr(st, 2));
 	else // item id
-		id = item_db.find( script_getnum( st, 2 ) );
+		id = item_db.find_get(script_getnum(st, 2));
 
 	if (!id) {
 		ShowError("buildin_%s: Invalid item '%s'.\n", command, script_getstr(st, 2)); // returns string, regardless of what it was
@@ -7381,7 +7381,7 @@ BUILDIN_FUNC(rentalcountitem)
 		return SCRIPT_CMD_FAILURE;
 	}
 
-	int count = script_countitem_sub(sd->inventory.u.items_inventory, id, MAX_INVENTORY, expanded, st, sd, true);
+	int count = script_countitem_sub(sd->inventory.u.items_inventory, *id, MAX_INVENTORY, expanded, st, sd, true);
 	if (count < 0) {
 		st->state = END;
 		return SCRIPT_CMD_FAILURE;
@@ -7402,7 +7402,7 @@ BUILDIN_FUNC(checkweight)
 	int slots = 0;
 	unsigned short amount2 = 0;
 	unsigned int weight = 0, i, nbargs;
-	std::shared_ptr<item_data> id;
+	const item_data * id = nullptr;
 	map_session_data* sd;
 
 	if( !script_rid2sd(sd) )
@@ -7421,10 +7421,10 @@ BUILDIN_FUNC(checkweight)
 		unsigned short amount;
 
 		if( script_isstring(st, i) ) // item name
-			id = item_db.searchname( script_getstr( st, i ) );
+			id = item_db.searchname(script_getstr(st, i));
 		else // item id
-			id = item_db.find( script_getnum( st, i ) );
-		if( id == nullptr ){
+			id = item_db.find_get(script_getnum(st, i));
+		if (id == nullptr) {
 			ShowError("buildin_checkweight: Invalid item '%s'.\n", script_getstr(st,i));  // returns string, regardless of what it was
 			script_pushint(st,0);
 			return SCRIPT_CMD_FAILURE;
@@ -7596,14 +7596,14 @@ BUILDIN_FUNC(getitem)
 	map_session_data *sd;
 	unsigned char flag = 0;
 	const char* command = script_getfuncname(st);
-	std::shared_ptr<item_data> id;
+	const item_data * id = nullptr;
 
 	if( script_isstring(st, 2) ) {// "<item name>"
 		const char *name = script_getstr(st, 2);
 
-		id = item_db.searchname( name );
+		id = item_db.searchname(name);
 
-		if( id == nullptr ){
+		if (id == nullptr) {
 			ShowError("buildin_getitem: Nonexistant item %s requested.\n", name);
 			return SCRIPT_CMD_FAILURE; //No item created.
 		}
@@ -7611,9 +7611,9 @@ BUILDIN_FUNC(getitem)
 	} else {// <item id>
 		nameid = script_getnum(st, 2);
 
-		id = item_db.find( nameid );
+		id = item_db.find_get(nameid);
 
-		if( id == nullptr ){
+		if (id == nullptr) {
 			ShowError("buildin_getitem: Nonexistant item %u requested.\n", nameid);
 			return SCRIPT_CMD_FAILURE; //No item created.
 		}
@@ -7644,7 +7644,7 @@ BUILDIN_FUNC(getitem)
 		return SCRIPT_CMD_SUCCESS;
 
 	//Check if it's stackable.
-	if( !itemdb_isstackable2( id.get() ) ){
+	if (!itemdb_isstackable2(id)) {
 		get_count = 1;
 	}else{
 		get_count = amount;
@@ -7735,14 +7735,14 @@ BUILDIN_FUNC(getitem2)
 		return SCRIPT_CMD_SUCCESS;
 
 	t_itemid nameid;
-	std::shared_ptr<item_data> item_data;
+	const item_data * item_data = nullptr;
 
 	if( script_isstring(st, 2) ) {
 		const char *name = script_getstr(st, 2);
 
-		item_data = item_db.searchname( name );
+		item_data = item_db.searchname(name);
 
-		if( item_data == nullptr ){
+		if (item_data == nullptr) {
 			ShowError("buildin_getitem2: Nonexistant item %s requested (by conv_str).\n", name);
 			return SCRIPT_CMD_FAILURE; //No item created.
 		}
@@ -7750,9 +7750,9 @@ BUILDIN_FUNC(getitem2)
 	} else {
 		nameid = script_getnum(st, 2);
 
-		item_data = item_db.find( nameid );
+		item_data = item_db.find_get(nameid);
 
-		if( item_data == nullptr ){
+		if (item_data == nullptr) {
 			ShowError("buildin_getitem2: Nonexistant item %u requested (by conv_num).\n", nameid);
 			return SCRIPT_CMD_FAILURE; //No item created.
 		}
@@ -7811,9 +7811,9 @@ BUILDIN_FUNC(getitem2)
 		int get_count = 0;
 	
 		//Check if it's stackable.
-		if( !itemdb_isstackable2( item_data.get() ) ){
+		if(!itemdb_isstackable2(item_data)) {
 			get_count = 1;
-		}else{
+		} else {
 			get_count = amount;
 		}
 
@@ -7850,7 +7850,7 @@ BUILDIN_FUNC(rentitem) {
 	if( script_isstring(st, 2) )
 	{
 		const char *name = script_getstr(st, 2);
-		std::shared_ptr<item_data> itd = item_db.searchname( name );
+		const auto * itd = item_db.searchname(name);
 
 		if( itd == nullptr ){
 			ShowError("buildin_rentitem: Nonexistant item %s requested.\n", name);
@@ -7908,15 +7908,15 @@ BUILDIN_FUNC(rentitem2) {
 	} else if (!script_accid2sd(11,sd))
 		return SCRIPT_CMD_FAILURE;
 
-	std::shared_ptr<item_data> id;
+	const item_data * id = nullptr;
 	t_itemid nameid = 0;
 
 	if( script_isstring(st, 2) ) {
 		const char *name = script_getstr(st, 2);
 
-		id = item_db.searchname( name );
+		id = item_db.searchname(name);
 
-		if( id == nullptr ) {
+		if (id == nullptr) {
 			ShowError("buildin_rentitem2: Nonexistant item %s requested.\n", name);
 			return SCRIPT_CMD_FAILURE;
 		}
@@ -7924,9 +7924,9 @@ BUILDIN_FUNC(rentitem2) {
 	} else {
 		nameid = script_getnum(st, 2);
 
-		id = item_db.find( nameid );
+		id = item_db.find_get(nameid);
 
-		if( id == nullptr ){
+		if (id == nullptr) {
 			ShowError("buildin_rentitem2: Nonexistant item %u requested.\n", nameid);
 			return SCRIPT_CMD_FAILURE;
 		}
@@ -8016,7 +8016,7 @@ BUILDIN_FUNC(getnameditem)
 
 	if( script_isstring(st, 2) ){
 		const char *name = script_getstr(st, 2);
-		std::shared_ptr<item_data> item_data = item_db.searchname( name );
+		const auto * item_data = item_db.searchname(name);
 
 		// Failed
 		if( item_data == nullptr){
@@ -8092,7 +8092,7 @@ BUILDIN_FUNC(makeitem) {
 
 	if( script_isstring(st, 2) ){
 		const char *name = script_getstr(st, 2);
-		std::shared_ptr<item_data> item_data = item_db.searchname( name );
+		const auto * item_data = item_db.searchname(name);
 
 		if( item_data )
 			nameid = item_data->nameid;
@@ -8160,7 +8160,7 @@ BUILDIN_FUNC(makeitem2) {
 
 	if( script_isstring( st, 2 ) ){
 		const char *name = script_getstr( st, 2 );
-		std::shared_ptr<item_data> item_data = item_db.searchname( name );
+		const auto * item_data = item_db.searchname(name);
 
 		if( item_data ){
 			nameid = item_data->nameid;
@@ -8534,7 +8534,7 @@ BUILDIN_FUNC(delitem)
 	if( script_isstring(st, 2) )
 	{
 		const char* item_name = script_getstr(st, 2);
-		std::shared_ptr<item_data> id = item_db.searchname(item_name);
+		const auto * id = item_db.searchname(item_name);
 
 		if( id == nullptr ){
 			ShowError("buildin_%s: unknown item \"%s\".\n", command, item_name);
@@ -8629,7 +8629,7 @@ BUILDIN_FUNC(delitem2)
 	if( script_isstring(st, 2) )
 	{
 		const char* item_name = script_getstr(st, 2);
-		std::shared_ptr<item_data> id = item_db.searchname( item_name );
+		const auto * id = item_db.searchname(item_name);
 
 		if( id == nullptr ){
 			ShowError("buildin_%s: unknown item \"%s\".\n", command, item_name);
@@ -12150,7 +12150,7 @@ BUILDIN_FUNC(getareadropitem)
 
 	if( script_isstring(st, 7) ){
 		const char *name = script_getstr(st, 7);
-		std::shared_ptr<item_data> item_data = item_db.searchname( name );
+		const auto * item_data = item_db.searchname(name);
 
 		if( item_data )
 			nameid=item_data->nameid;
@@ -14479,12 +14479,12 @@ BUILDIN_FUNC(guardianinfo)
  *------------------------------------------*/
 BUILDIN_FUNC(getitemname)
 {
-	std::shared_ptr<item_data> i_data;
+	const item_data * i_data = nullptr;
 
 	if( script_isstring(st, 2) ){
-		i_data = item_db.searchname( script_getstr( st, 2 ) );
+		i_data = item_db.searchname(script_getstr(st, 2));
 	}else{
-		i_data = item_db.find( script_getnum( st, 2 ) );
+		i_data = item_db.find_get(script_getnum(st, 2));
 	}
 
 	if( i_data == nullptr ){
@@ -14523,13 +14523,13 @@ BUILDIN_FUNC(getitemslots)
  *------------------------------------------*/
 BUILDIN_FUNC(getiteminfo)
 {
-	std::shared_ptr<item_data> i_data;
+	const item_data * i_data = nullptr;
 	int type = script_getnum(st, 3);
 
 	if (script_isstring(st, 2))
-		i_data = item_db.searchname( script_getstr( st, 2 ) );
+		i_data = item_db.searchname(script_getstr(st, 2));
 	else
-		i_data = item_db.find( script_getnum( st, 2 ) );
+		i_data = item_db.find_get(script_getnum(st, 2));
 
 	if (i_data == nullptr) {
 		if (type != ITEMINFO_AEGISNAME)
@@ -14598,12 +14598,12 @@ BUILDIN_FUNC(getiteminfo)
  *------------------------------------------*/
 BUILDIN_FUNC(setiteminfo)
 {
-	std::shared_ptr<item_data> i_data;
+	item_data * i_data = nullptr;
 
 	if (script_isstring(st, 2))
-		i_data = item_db.search_aegisname( script_getstr( st, 2 ) );
+		i_data = item_db.search_aegisname(script_getstr(st, 2));
 	else
-		i_data = item_db.find( script_getnum( st, 2 ) );
+		i_data = item_db.find(script_getnum(st, 2)).get();
 
 	if (i_data == nullptr) {
 		script_pushint(st, -1);
@@ -22888,7 +22888,7 @@ BUILDIN_FUNC(npcskill)
 BUILDIN_FUNC(consumeitem)
 {
 	map_session_data *sd;
-	std::shared_ptr<item_data> item_data;
+	const struct item_data * item_data = nullptr;
 
 	if (!script_charid2sd(3, sd))
 		return SCRIPT_CMD_FAILURE;
@@ -22896,7 +22896,7 @@ BUILDIN_FUNC(consumeitem)
 	if( script_isstring(st, 2) ){
 		const char *name = script_getstr(st, 2);
 
-		item_data = item_db.searchname( name );
+		item_data = item_db.searchname(name);
 
 		if( item_data == nullptr ){
 			ShowError( "buildin_consumeitem: Nonexistant item %s requested.\n", name );
@@ -22905,7 +22905,7 @@ BUILDIN_FUNC(consumeitem)
 	} else {
 		t_itemid nameid = script_getnum(st, 2);
 
-		item_data = item_db.find( nameid );
+		item_data = item_db.find_get(nameid);
 
 		if( item_data == nullptr ){
 			ShowError("buildin_consumeitem: Nonexistant item %u requested.\n", nameid );
@@ -23644,7 +23644,7 @@ BUILDIN_FUNC(mergeitem2) {
 	if (script_hasdata(st, 2)) {
 		if (script_isstring(st, 2)) {// "<item name>"
 			const char *name = script_getstr(st, 2);
-			std::shared_ptr<item_data> id = item_db.searchname( name );
+			const auto * id = item_db.searchname(name);
 
 			if( id == nullptr ){
 				ShowError("buildin_mergeitem2: Nonexistant item %s requested.\n", name);
@@ -26344,7 +26344,7 @@ BUILDIN_FUNC( laphine_synthesis ){
 		if( script_isstring( st, 2 ) ){
 			const char* item_name = script_getstr( st, 2 );
 
-			std::shared_ptr<item_data> item = item_db.searchname( item_name );
+			const auto * item = item_db.searchname(item_name);
 
 			if( item == nullptr ){
 				ShowError("buildin_laphine_synthesis: Item \"%s\" does not exist.\n", item_name );
@@ -26703,7 +26703,7 @@ BUILDIN_FUNC(item_reform){
 	if( script_hasdata( st, 2 ) ){
 		if( script_isstring( st, 2 ) ){
 			const char* item_name = script_getstr( st, 2 );
-			std::shared_ptr<item_data> item = item_db.searchname( item_name );
+			const auto * item = item_db.searchname(item_name);
 
 			if( item == nullptr ){
 				ShowError("buildin_item_reform: Item \"%s\" does not exist.\n", item_name );

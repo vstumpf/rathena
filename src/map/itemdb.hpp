@@ -2120,7 +2120,7 @@ struct item_data
 		this->combos.clear();
 	}
 
-	bool isStackable();
+	bool isStackable() const;
 	int inventorySlotNeeded(int quantity);
 };
 
@@ -2129,7 +2129,7 @@ private:
 	std::unordered_map<std::string, std::shared_ptr<item_data>> nameToItemDataMap;
 	std::unordered_map<std::string, std::shared_ptr<item_data>> aegisNameToItemDataMap;
 
-	e_sex defaultGender( const ryml::NodeRef& node, std::shared_ptr<item_data> id );
+	e_sex defaultGender(const ryml::NodeRef& node, item_data &id);
 
 public:
 	ItemDatabase() : TypesafeCachedYamlDatabase("ITEM_DB", 3, 1) {
@@ -2147,8 +2147,8 @@ public:
 	}
 
 	// Additional
-	std::shared_ptr<item_data> searchname( const char* name );
-	std::shared_ptr<item_data> search_aegisname( const char *name );
+	item_data* searchname(const char* name);
+	item_data* search_aegisname(const char *name);
 	std::string create_item_link( struct item& data );
 	std::string create_item_link( t_itemid id );
 };
@@ -2169,7 +2169,7 @@ public:
 	bool item_exists(uint16 group_id, t_itemid nameid);
 	int16 item_exists_pc(map_session_data *sd, uint16 group_id);
 	t_itemid get_random_item_id(uint16 group_id, uint8 sub_group);
-	std::shared_ptr<s_item_group_entry> get_random_entry(uint16 group_id, uint8 sub_group);
+	const s_item_group_entry * get_random_entry(uint16 group_id, uint8 sub_group);
 	uint8 pc_get_itemgroup(uint16 group_id, bool identify, map_session_data *sd);
 };
 
@@ -2409,10 +2409,10 @@ bool itemdb_ishatched_egg(struct item* item);
 #define itemdb_canmail(item, gmlv) itemdb_isrestricted(item , gmlv, 0, itemdb_canmail_sub)
 #define itemdb_canauction(item, gmlv) itemdb_isrestricted(item , gmlv, 0, itemdb_canauction_sub)
 
-bool itemdb_isequip2(struct item_data *id);
+bool itemdb_isequip2(const struct item_data *id);
 #define itemdb_isequip(nameid) itemdb_isequip2(itemdb_search(nameid))
 char itemdb_isidentified(t_itemid nameid);
-bool itemdb_isstackable2(struct item_data *id);
+bool itemdb_isstackable2(const struct item_data *id);
 #define itemdb_isstackable(nameid) itemdb_isstackable2(itemdb_search(nameid))
 bool itemdb_isNoEquip(struct item_data *id, uint16 m);
 

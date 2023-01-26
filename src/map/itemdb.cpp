@@ -74,7 +74,7 @@ uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
 			this->invalidWarning(node["AegisName"], "AegisName \"%s\" exceeds maximum of %d characters, capping...\n", name.c_str(), ITEM_NAME_LENGTH - 1);
 		}
 
-		std::shared_ptr<item_data> id = item_db.search_aegisname( name.c_str() );
+		const auto * id = item_db.search_aegisname(name.c_str());
 
 		if (id != nullptr && id->nameid != nameid) {
 			this->invalidWarning(node["AegisName"], "Found duplicate item Aegis name for %s, skipping.\n", name.c_str());
@@ -429,11 +429,11 @@ uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
 		}
 
 		item->sex = static_cast<e_sex>(constant);
-		item->sex = this->defaultGender( node, item );
+		item->sex = this->defaultGender(node, *item);
 	} else {
 		if (!exists) {
 			item->sex = SEX_BOTH;
-			item->sex = this->defaultGender( node, item );
+			item->sex = this->defaultGender(node, *item);
 		}
 	}
 
@@ -605,7 +605,7 @@ uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
 		if (!this->asString(node, "AliasName", view))
 			return 0;
 
-		std::shared_ptr<item_data> view_data = item_db.search_aegisname( view.c_str() );
+		const auto * view_data = item_db.search_aegisname(view.c_str());
 
 		if (view_data == nullptr) {
 			this->invalidWarning(node["AliasName"], "Unable to change the alias because %s is an unknown item.\n", view.c_str());
@@ -1110,7 +1110,7 @@ uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
 
 void ItemDatabase::loadingFinished(){
 	for (auto &tmp_item : item_db) {
-		std::shared_ptr<item_data> item = tmp_item.second;
+		auto &item = tmp_item.second;
 
 		// Items that are consumed only after target confirmation
 		if (item->type == IT_DELAYCONSUME) {
@@ -1194,22 +1194,22 @@ void ItemDatabase::loadingFinished(){
  * @param node: the already parsed item data.
  * @return gender that should be used.
  */
-e_sex ItemDatabase::defaultGender( const ryml::NodeRef& node, std::shared_ptr<item_data> id ){
-	if (id->nameid == WEDDING_RING_M) //Grom Ring
+e_sex ItemDatabase::defaultGender(const ryml::NodeRef& node, item_data &id){
+	if (id.nameid == WEDDING_RING_M) //Grom Ring
 		return SEX_MALE;
-	if (id->nameid == WEDDING_RING_F) //Bride Ring
+	if (id.nameid == WEDDING_RING_F) //Bride Ring
 		return SEX_FEMALE;
-	if( id->type == IT_WEAPON ){
-		if( id->subtype == W_MUSICAL ){
-			if( id->sex != SEX_MALE ){
+	if( id.type == IT_WEAPON ){
+		if( id.subtype == W_MUSICAL ){
+			if( id.sex != SEX_MALE ){
 				this->invalidWarning( node, "Musical instruments are always male-only, defaulting to SEX_MALE.\n" );
 			}
 
 			return SEX_MALE;
 		}
 
-		if( id->subtype == W_WHIP ){
-			if( id->sex != SEX_FEMALE ){
+		if( id.subtype == W_WHIP ){
+			if( id.sex != SEX_FEMALE ){
 				this->invalidWarning( node, "Whips are always female-only, defaulting to SEX_FEMALE.\n" );
 			}
 
@@ -1217,31 +1217,31 @@ e_sex ItemDatabase::defaultGender( const ryml::NodeRef& node, std::shared_ptr<it
 		}
 	}
 
-	return static_cast<e_sex>( id->sex );
+	return static_cast<e_sex>( id.sex );
 }
 
-std::shared_ptr<item_data> ItemDatabase::search_aegisname( const char* name ){
+item_data * ItemDatabase::search_aegisname( const char* name ){
 	// Create a copy
 	std::string lowername = name;
 	// Convert it to lower
 	util::tolower( lowername );
 
-	return util::umap_find( this->aegisNameToItemDataMap, lowername );
+	return util::umap_find_get(this->aegisNameToItemDataMap, lowername);
 }
 
-std::shared_ptr<item_data> ItemDatabase::searchname( const char *name ){
+item_data * ItemDatabase::searchname( const char *name ){
 	// Create a copy
 	std::string lowername = name;
 	// Convert it to lower
 	util::tolower( lowername );
 
-	std::shared_ptr<item_data> result = util::umap_find( this->aegisNameToItemDataMap, lowername );
+	auto * result = util::umap_find_get(this->aegisNameToItemDataMap, lowername);
 
 	if( result != nullptr ){
 		return result;
 	}
 
-	return util::umap_find( this->nameToItemDataMap, lowername );
+	return util::umap_find_get(this->nameToItemDataMap, lowername);
 }
 
 /**
@@ -1251,9 +1251,9 @@ std::shared_ptr<item_data> ItemDatabase::searchname( const char *name ){
 * @author [Cydh]
 **/
 std::string ItemDatabase::create_item_link( struct item& item ){
-	std::shared_ptr<item_data> data = this->find( item.nameid );
+	const auto * id = this->find_get(item.nameid);
 
-	if( data == nullptr ){
+	if (id == nullptr) {
 		ShowError( "Tried to create itemlink for unknown item %u.\n", item.nameid );
 		return "Unknown item";
 	}
@@ -1262,10 +1262,8 @@ std::string ItemDatabase::create_item_link( struct item& item ){
 #if PACKETVER >= 20100000
 	if( !battle_config.feature_itemlink ){
 		// Feature is disabled
-		return data->ename;
+		return id->ename;
 	}
-
-	struct item_data* id = data.get();
 
 #if PACKETVER_MAIN_NUM >= 20200916 || PACKETVER_RE_NUM >= 20200724
 	const std::string start_tag = "<ITEML>";
@@ -1346,7 +1344,7 @@ ItemDatabase item_db;
  */
 bool ItemGroupDatabase::item_exists(uint16 group_id, t_itemid nameid)
 {
-	std::shared_ptr<s_item_group_db> group = this->find(group_id);
+	const auto * group = this->find_get(group_id);
 
 	if (group == nullptr)
 		return false;
@@ -1368,7 +1366,7 @@ bool ItemGroupDatabase::item_exists(uint16 group_id, t_itemid nameid)
  */
 int16 ItemGroupDatabase::item_exists_pc(map_session_data *sd, uint16 group_id)
 {
-	std::shared_ptr<s_item_group_db> group = this->find(group_id);
+	const auto * group = this->find_get(group_id);
 
 	if (group == nullptr || group->random.empty())
 		return -1;
@@ -1399,7 +1397,7 @@ uint64 LaphineSynthesisDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			return 0;
 		}
 
-		std::shared_ptr<item_data> id = item_db.search_aegisname( name.c_str() );
+		const auto * id = item_db.search_aegisname( name.c_str() );
 
 		if( id == nullptr ){
 			this->invalidWarning( node["Item"], "Unknown item \"%s\".\n", name.c_str() );
@@ -1469,7 +1467,7 @@ uint64 LaphineSynthesisDatabase::parseBodyNode( const ryml::NodeRef& node ){
 				return 0;
 			}
 
-			std::shared_ptr<item_data> id = item_db.search_aegisname( name.c_str() );
+			const auto * id = item_db.search_aegisname(name.c_str());
 
 			if( id == nullptr ){
 				this->invalidWarning( requirementNode["Item"], "Unknown item \"%s\".\n", name.c_str() );
@@ -1570,7 +1568,7 @@ uint64 LaphineUpgradeDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			return 0;
 		}
 
-		std::shared_ptr<item_data> id = item_db.search_aegisname( name.c_str() );
+		const auto * id = item_db.search_aegisname(name.c_str());
 
 		if( id == nullptr ){
 			this->invalidWarning( node["Item"], "Unknown item \"%s\".\n", name.c_str() );
@@ -1621,7 +1619,7 @@ uint64 LaphineUpgradeDatabase::parseBodyNode( const ryml::NodeRef& node ){
 				return 0;
 			}
 
-			std::shared_ptr<item_data> id = item_db.search_aegisname( name.c_str() );
+			const auto * id = item_db.search_aegisname(name.c_str());
 
 			if( id == nullptr ){
 				this->invalidWarning( targetNode["Item"], "Unknown item \"%s\".\n", name.c_str() );
@@ -1785,7 +1783,7 @@ uint64 ItemReformDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			return 0;
 		}
 
-		std::shared_ptr<item_data> id = item_db.search_aegisname( name.c_str() );
+		const auto * id = item_db.search_aegisname( name.c_str() );
 
 		if( id == nullptr ){
 			this->invalidWarning( node["Item"], "Unknown item \"%s\".\n", name.c_str() );
@@ -1818,7 +1816,7 @@ uint64 ItemReformDatabase::parseBodyNode( const ryml::NodeRef& node ){
 					return 0;
 				}
 
-				std::shared_ptr<item_data> id = item_db.search_aegisname( name.c_str() );
+				const auto * id = item_db.search_aegisname( name.c_str() );
 
 				if( id == nullptr ){
 					this->invalidWarning( baseNode["BaseItem"], "Unknown item \"%s\".\n", name.c_str() );
@@ -1919,7 +1917,7 @@ uint64 ItemReformDatabase::parseBodyNode( const ryml::NodeRef& node ){
 						return 0;
 					}
 
-					std::shared_ptr<item_data> id = item_db.search_aegisname( name.c_str() );
+					const auto * id = item_db.search_aegisname( name.c_str() );
 
 					if( id == nullptr ){
 						this->invalidWarning( materialNode["Material"], "Unknown item \"%s\".\n", name.c_str() );
@@ -1960,7 +1958,7 @@ uint64 ItemReformDatabase::parseBodyNode( const ryml::NodeRef& node ){
 					return 0;
 				}
 
-				std::shared_ptr<item_data> id = item_db.search_aegisname( name.c_str() );
+				const auto * id = item_db.search_aegisname( name.c_str() );
 
 				if( id == nullptr ){
 					this->invalidWarning( baseNode["ResultItem"], "Unknown item \"%s\".\n", name.c_str() );
@@ -2069,7 +2067,7 @@ bool ItemEnchantDatabase::parseMaterials( const ryml::NodeRef& node, std::unorde
 				return false;
 			}
 
-			std::shared_ptr<item_data> item = item_db.search_aegisname( name.c_str() );
+			const auto * item = item_db.search_aegisname( name.c_str() );
 
 			if( item == nullptr ){
 				this->invalidWarning( materialNode["Material"], "Unknown item \"%s\".\n", name.c_str() );
@@ -2135,7 +2133,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 
 			c4::from_chars( it.key(), &name );
 
-			std::shared_ptr<item_data> item = item_db.search_aegisname( name.c_str() );
+			const auto * item = item_db.search_aegisname( name.c_str() );
 
 			if( item == nullptr ){
 				this->invalidWarning( it, "Unknown item \"%s\".\n", name.c_str() );
@@ -2394,7 +2392,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 								return 0;
 							}
 
-							std::shared_ptr<item_data> enchant_item = item_db.search_aegisname( enchant_name.c_str() );
+							const auto * enchant_item = item_db.search_aegisname( enchant_name.c_str() );
 
 							if( enchant_item == nullptr ){
 								this->invalidWarning( itemNode["Item"], "Unknown item \"%s\".\n", enchant_name.c_str() );
@@ -2443,7 +2441,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 						return 0;
 					}
 
-					std::shared_ptr<item_data> enchant_item = item_db.search_aegisname( enchant_name.c_str() );
+					const auto * enchant_item = item_db.search_aegisname( enchant_name.c_str() );
 
 					if( enchant_item == nullptr ){
 						this->invalidWarning( enchantNode["Item"], "Unknown item \"%s\".\n", enchant_name.c_str() );
@@ -2495,7 +2493,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 						return 0;
 					}
 
-					std::shared_ptr<item_data> enchant_item = item_db.search_aegisname( enchant_name.c_str() );
+					const auto * enchant_item = item_db.search_aegisname( enchant_name.c_str() );
 
 					if( enchant_item == nullptr ){
 						this->invalidWarning( upgradeNode["Enchant"], "Unknown item \"%s\".\n", enchant_name.c_str() );
@@ -2521,7 +2519,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 							return 0;
 						}
 
-						std::shared_ptr<item_data> upgrade_item = item_db.search_aegisname( upgrade_name.c_str() );
+						const auto * upgrade_item = item_db.search_aegisname( upgrade_name.c_str() );
 
 						if( upgrade_item == nullptr ){
 							this->invalidWarning( upgradeNode["Upgrade"], "Unknown item \"%s\".\n", upgrade_name.c_str() );
@@ -2589,7 +2587,7 @@ uint64 ItemPackageDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			return 0;
 		}
 
-		std::shared_ptr<item_data> id = item_db.search_aegisname( name.c_str() );
+		const auto * id = item_db.search_aegisname( name.c_str() );
 
 		if( id == nullptr ){
 			this->invalidWarning( node["Item"], "Unknown item \"%s\".\n", name.c_str() );
@@ -2638,7 +2636,7 @@ uint64 ItemPackageDatabase::parseBodyNode( const ryml::NodeRef& node ){
 					return 0;
 				}
 
-				std::shared_ptr<item_data> id = item_db.search_aegisname( name.c_str() );
+				const auto * id = item_db.search_aegisname( name.c_str() );
 
 				if( id == nullptr ){
 					this->invalidWarning( itemNode["Item"], "Unknown item \"%s\".\n", name.c_str() );
@@ -2777,18 +2775,15 @@ uint16 itemdb_searchname_array(std::map<t_itemid, std::shared_ptr<item_data>> &d
 	return static_cast<uint16>(data.size());
 }
 
-std::shared_ptr<s_item_group_entry> get_random_itemsubgroup(std::shared_ptr<s_item_group_random> random) {
-	if (random == nullptr)
-		return nullptr;
+const s_item_group_entry * get_random_itemsubgroup(const s_item_group_random &random) {
+	for (size_t j = 0, max = random.data.size() * 3; j < max; j++) {
+		std::shared_ptr<s_item_group_entry> entry = util::umap_random(random.data);
 
-	for (size_t j = 0, max = random->data.size() * 3; j < max; j++) {
-		std::shared_ptr<s_item_group_entry> entry = util::umap_random(random->data);
-
-		if (entry->rate == 0 || rnd() % random->total_rate < entry->rate)	// always return entry for rate 0 ('must' item)
-			return entry;
+		if (entry->rate == 0 || rnd() % random.total_rate < entry->rate)	// always return entry for rate 0 ('must' item)
+			return entry.get();
 	}
 
-	return util::umap_random(random->data);
+	return util::umap_random(random.data).get();
 }
 
 /**
@@ -2797,7 +2792,7 @@ std::shared_ptr<s_item_group_entry> get_random_itemsubgroup(std::shared_ptr<s_it
 * @param sub_group: 0 is 'must' item group, random groups start from 1
 * @return Item group entry or NULL on fail
 */
-std::shared_ptr<s_item_group_entry> ItemGroupDatabase::get_random_entry(uint16 group_id, uint8 sub_group) {
+const s_item_group_entry * ItemGroupDatabase::get_random_entry(uint16 group_id, uint8 sub_group) {
 	std::shared_ptr<s_item_group_db> group = this->find(group_id);
 
 	if (group == nullptr) {
@@ -2813,7 +2808,10 @@ std::shared_ptr<s_item_group_entry> ItemGroupDatabase::get_random_entry(uint16 g
 		return nullptr;
 	}
 
-	return get_random_itemsubgroup(group->random[sub_group]);
+	if (!group->random[sub_group])
+		return nullptr;
+
+	return get_random_itemsubgroup(*group->random[sub_group]);
 }
 
 /**
@@ -2823,7 +2821,7 @@ std::shared_ptr<s_item_group_entry> ItemGroupDatabase::get_random_entry(uint16 g
 * @return Item ID or UNKNOWN_ITEM_ID on fail
 */
 t_itemid ItemGroupDatabase::get_random_item_id(uint16 group_id, uint8 sub_group) {
-	std::shared_ptr<s_item_group_entry> entry = this->get_random_entry(group_id, sub_group);
+	const auto * entry = this->get_random_entry(group_id, sub_group);
 	return entry != nullptr ? entry->nameid : UNKNOWN_ITEM_ID;
 }
 
@@ -2833,18 +2831,15 @@ t_itemid ItemGroupDatabase::get_random_item_id(uint16 group_id, uint8 sub_group)
 * @param group_id: The group ID of item that obtained by player
 * @param *group: struct s_item_group from itemgroup_db[group_id].random[idx] or itemgroup_db[group_id].must[sub_group][idx]
 */
-static void itemdb_pc_get_itemgroup_sub(map_session_data *sd, bool identify, std::shared_ptr<s_item_group_entry> data) {
-	if (data == nullptr)
-		return;
-
+static void itemdb_pc_get_itemgroup_sub(map_session_data *sd, bool identify, const s_item_group_entry &data) {
 	item tmp = {};
 
-	tmp.nameid = data->nameid;
-	tmp.bound = data->bound;
-	tmp.identify = identify ? identify : itemdb_isidentified(data->nameid);
-	tmp.expire_time = (data->duration) ? (unsigned int)(time(NULL) + data->duration*60) : 0;
-	if (data->isNamed) {
-		tmp.card[0] = itemdb_isequip(data->nameid) ? CARD0_FORGE : CARD0_CREATE;
+	tmp.nameid = data.nameid;
+	tmp.bound = data.bound;
+	tmp.identify = identify ? identify : itemdb_isidentified(data.nameid);
+	tmp.expire_time = (data.duration) ? (unsigned int)(time(NULL) + data.duration*60) : 0;
+	if (data.isNamed) {
+		tmp.card[0] = itemdb_isequip(data.nameid) ? CARD0_FORGE : CARD0_CREATE;
 		tmp.card[1] = 0;
 		tmp.card[2] = GetWord(sd->status.char_id, 0);
 		tmp.card[3] = GetWord(sd->status.char_id, 1);
@@ -2852,33 +2847,33 @@ static void itemdb_pc_get_itemgroup_sub(map_session_data *sd, bool identify, std
 
 	uint16 get_amt = 0;
 
-	if (itemdb_isstackable(data->nameid) && data->isStacked)
-		get_amt = data->amount;
+	if (itemdb_isstackable(data.nameid) && data.isStacked)
+		get_amt = data.amount;
 	else
 		get_amt = 1;
 
 	tmp.amount = get_amt;
 
 	// Do loop for non-stackable item
-	for (uint16 i = 0; i < data->amount; i += get_amt) {
+	for (uint16 i = 0; i < data.amount; i += get_amt) {
 		char flag = 0;
-		tmp.unique_id = data->GUID ? pc_generate_unique_id(sd) : 0; // Generate GUID
+		tmp.unique_id = data.GUID ? pc_generate_unique_id(sd) : 0; // Generate GUID
 
-		if( itemdb_isequip( data->nameid ) ){
-			if( data->refineMinimum > 0 && data->refineMaximum > 0 ){
-				tmp.refine = rnd_value( data->refineMinimum, data->refineMaximum );
-			}else if( data->refineMinimum > 0 ){
-				tmp.refine = rnd_value( data->refineMinimum, MAX_REFINE );
-			}else if( data->refineMaximum > 0 ){
-				tmp.refine = rnd_value( 1, data->refineMaximum );
+		if( itemdb_isequip( data.nameid ) ){
+			if( data.refineMinimum > 0 && data.refineMaximum > 0 ){
+				tmp.refine = rnd_value( data.refineMinimum, data.refineMaximum );
+			}else if( data.refineMinimum > 0 ){
+				tmp.refine = rnd_value( data.refineMinimum, MAX_REFINE );
+			}else if( data.refineMaximum > 0 ){
+				tmp.refine = rnd_value( 1, data.refineMaximum );
 			}else{
 				tmp.refine = 0;
 			}
 
-			if( data->randomOptionGroup != nullptr ){
+			if( data.randomOptionGroup != nullptr ){
 				memset( tmp.option, 0, sizeof( tmp.option ) );
 
-				data->randomOptionGroup->apply( tmp );
+				data.randomOptionGroup->apply( tmp );
 			}
 		}
 
@@ -2887,8 +2882,8 @@ static void itemdb_pc_get_itemgroup_sub(map_session_data *sd, bool identify, std
 			if (pc_candrop(sd, &tmp))
 				map_addflooritem(&tmp, tmp.amount, sd->bl.m, sd->bl.x,sd->bl.y, 0, 0, 0, 0, 0);
 		}
-		else if (!flag && data->isAnnounced)
-			intif_broadcast_obtain_special_item(sd, data->nameid, sd->itemid, ITEMOBTAIN_TYPE_BOXITEM);
+		else if (!flag && data.isAnnounced)
+			intif_broadcast_obtain_special_item(sd, data.nameid, sd->itemid, ITEMOBTAIN_TYPE_BOXITEM);
 	}
 }
 
@@ -2915,15 +2910,21 @@ uint8 ItemGroupDatabase::pc_get_itemgroup(uint16 group_id, bool identify, map_se
 	std::shared_ptr<s_item_group_random> random = util::umap_find(group->random, subgroup);
 
 	if (random != nullptr && !random->data.empty()) {
-		for (const auto &it : random->data)
-			itemdb_pc_get_itemgroup_sub(sd, identify, it.second);
+		for (const auto &it : random->data) {
+			if (!it.second)
+				continue;
+			itemdb_pc_get_itemgroup_sub(sd, identify, *it.second);
+		}
 	}
 
 	// Get 1 'random' item from each subgroup
 	for (const auto &random : group->random) {
-		if (random.first == 0 || random.second->data.empty())
+		if (random.first == 0 || random.second->data.empty() || !random.second)
 			continue;
-		itemdb_pc_get_itemgroup_sub(sd, identify, get_random_itemsubgroup(random.second));
+		const auto * subgroup = get_random_itemsubgroup(*random.second);
+		if (!subgroup)
+			continue;
+		itemdb_pc_get_itemgroup_sub(sd, identify, *subgroup);
 	}
 
 	return 0;
@@ -3034,7 +3035,7 @@ struct item_data* itemdb_search(t_itemid nameid) {
 * @param id Item data
 * @return True if item is equip, false otherwise
 */
-bool itemdb_isequip2(struct item_data *id) {
+bool itemdb_isequip2(const struct item_data *id) {
 	nullpo_ret(id);
 	switch (id->type) {
 		case IT_WEAPON:
@@ -3051,7 +3052,7 @@ bool itemdb_isequip2(struct item_data *id) {
 * @param id Item data
 * @return True if item is stackable, false otherwise
 */
-bool itemdb_isstackable2(struct item_data *id)
+bool itemdb_isstackable2(const struct item_data *id)
 {
 	nullpo_ret(id);
 	return id->isStackable();
@@ -3218,7 +3219,7 @@ uint64 ItemGroupDatabase::parseBodyNode(const ryml::NodeRef& node) {
 					if (!this->asString(listit, "Clear", item_name))
 						continue;
 
-					std::shared_ptr<item_data> item = item_db.search_aegisname( item_name.c_str() );
+					const auto * item = item_db.search_aegisname( item_name.c_str() );
 
 					if (item == nullptr) {
 						this->invalidWarning(listit["Clear"], "Unknown Item %s. Clear failed.\n", item_name.c_str());
@@ -3236,7 +3237,7 @@ uint64 ItemGroupDatabase::parseBodyNode(const ryml::NodeRef& node) {
 				if (!this->asString(listit, "Item", item_name))
 					continue;
 
-				std::shared_ptr<item_data> item = item_db.search_aegisname( item_name.c_str() );
+				const auto * item = item_db.search_aegisname( item_name.c_str() );
 
 				if (item == nullptr) {
 					this->invalidWarning(listit["Item"], "Unknown Item %s.\n", item_name.c_str());
@@ -3521,7 +3522,7 @@ uint64 ComboDatabase::parseBodyNode(const ryml::NodeRef& node) {
 			std::string item_name;
 			c4::from_chars(it.val(), &item_name);
 
-			std::shared_ptr<item_data> item = item_db.search_aegisname(item_name.c_str());
+			const auto * item = item_db.search_aegisname(item_name.c_str());
 
 			if (item == nullptr) {
 				this->invalidWarning(it, "Invalid item %s, skipping.\n", item_name.c_str());
@@ -4610,7 +4611,7 @@ static void itemdb_read(void) {
  * Initialize / Finalize
  *------------------------------------------*/
 
-bool item_data::isStackable()
+bool item_data::isStackable() const
 {
 	switch (this->type) {
 		case IT_WEAPON:

@@ -1414,10 +1414,10 @@ ACMD_FUNC(item)
 	itemlist = strtok(item_name, ":");
 
 	while( itemlist != nullptr ){
-		std::shared_ptr<item_data> item = item_db.searchname( itemlist );
+		const auto * item = item_db.searchname(itemlist);
 
 		if( item == nullptr ){
-			item = item_db.find( strtoul( itemlist, nullptr, 10 ) );
+			item = item_db.find_get(strtoul(itemlist, nullptr, 10));
 		}
 
 		if( item == nullptr ){
@@ -1502,7 +1502,7 @@ ACMD_FUNC(item2)
 	if (number <= 0)
 		number = 1;
 
-	std::shared_ptr<item_data> item_data = item_db.searchname( item_name );
+	const auto * item_data = item_db.searchname(item_name);
 
 	if( item_data == nullptr ){
 		item_data = item_db.find( strtoul( item_name, nullptr, 10 ) );
@@ -2520,10 +2520,10 @@ ACMD_FUNC(produce)
 		return -1;
 	}
 
-	std::shared_ptr<item_data> item_data = item_db.searchname( item_name );
+	const auto * item_data = item_db.searchname(item_name);
 
 	if( item_data == nullptr ){
-		item_data = item_db.find( strtoul( item_name, nullptr, 10 ) );
+		item_data = item_db.find_get(strtoul(item_name, nullptr, 10 ) );
 	}
 
 	if( item_data == nullptr ){
@@ -2533,7 +2533,7 @@ ACMD_FUNC(produce)
 
 	item_id = item_data->nameid;
 
-	if( itemdb_isequip2( item_data.get() ) ){
+	if (itemdb_isequip2(item_data)) {
 		char flag = 0;
 		if (attribute < MIN_ATTRIBUTE || attribute > MAX_ATTRIBUTE)
 			attribute = ATTRIBUTE_NORMAL;
@@ -3098,7 +3098,7 @@ ACMD_FUNC(makeegg) {
 		t_itemid nameid;
 
 		// for egg name
-		std::shared_ptr<item_data> item_data = item_db.searchname( message );
+		const auto * item_data = item_db.searchname(message);
 		
 		if( item_data != nullptr ){
 			nameid = item_data->nameid;
@@ -6609,7 +6609,7 @@ ACMD_FUNC(autoloot)
  *------------------------------------------*/
 ACMD_FUNC(autolootitem)
 {
-	std::shared_ptr<item_data> item_data;
+	const struct item_data * item_data = nullptr;
 	int i;
 	int action = 3; // 1=add, 2=remove, 3=help+list (default), 4=reset
 
@@ -6630,10 +6630,10 @@ ACMD_FUNC(autolootitem)
 
 	if (action < 3) // add or remove
 	{
-		item_data = item_db.find( strtoul( message, nullptr, 10 ) );
+		item_data = item_db.find_get(strtoul(message, nullptr, 10));
 
 		if( item_data == nullptr ){
-			item_data = item_db.searchname( message );
+			item_data = item_db.searchname(message);
 		}
 
 		if( item_data == nullptr ){
@@ -6688,7 +6688,7 @@ ACMD_FUNC(autolootitem)
 			{
 				if (sd->state.autolootid[i] == 0)
 					continue;
-				item_data = item_db.find( sd->state.autolootid[i] );
+				item_data = item_db.find_get(sd->state.autolootid[i]);
 
 				if( item_data == nullptr ){
 					ShowDebug("Non-existant item %d on autolootitem list (account_id: %d, char_id: %d)", sd->state.autolootid[i], sd->status.account_id, sd->status.char_id);
@@ -9525,10 +9525,10 @@ ACMD_FUNC(delitem)
 		return -1;
 	}
 
-	std::shared_ptr<item_data> id = item_db.searchname( item_name );
+	const auto * id = item_db.searchname(item_name);
 
 	if( id == nullptr ){
-		id = item_db.find( strtoul( item_name, nullptr, 10 ) );
+		id = item_db.find_get(strtoul( item_name, nullptr, 10));
 	}
 
 	if( id == nullptr ){

@@ -14878,14 +14878,14 @@ void clif_parse_GM_Item_Monster(int fd, map_session_data *sd)
 		return;
 	}
 
-	std::shared_ptr<item_data> id = item_db.searchname( str );
+	const auto * id = item_db.searchname(str);
 
 	// Item
-	if( id ){
+	if (id) {
 		StringBuf_Init(&command);
-		if( !itemdb_isstackable2( id.get() ) ){ //Nonstackable
+		if (!itemdb_isstackable2(id)) { //Nonstackable
 			StringBuf_Printf(&command, "%citem2 %u 1 0 0 0 0 0 0 0", atcommand_symbol, id->nameid);
-		}else{
+		} else {
 			if (id->flag.guid)
 				StringBuf_Printf(&command, "%citem %u 1", atcommand_symbol, id->nameid);
 			else
@@ -21386,7 +21386,7 @@ void clif_parse_sale_search( int fd, map_session_data* sd ){
 
 	safestrncpy( item_name, RFIFOCP(fd, 8), min(RFIFOW(fd, 2) - 7, ITEM_NAME_LENGTH) );
 
-	std::shared_ptr<item_data> id = item_db.searchname( item_name );
+	const auto * id = item_db.searchname(item_name);
 
 	// not found
 	if( id == nullptr ){
