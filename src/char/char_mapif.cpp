@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h> //memcpy
+#include <sstream>
 
 #include <common/malloc.hpp>
 #include <common/showmsg.hpp>
@@ -518,22 +519,18 @@ int chmapif_parse_req_saveskillcooldown(int fd){
 		count = RFIFOW(fd,12);
 		if( count > 0 )
 		{
-			struct skill_cooldown_data data;
-			StringBuf buf;
-			int i;
-
-			StringBuf_Init(&buf);
-			StringBuf_Printf(&buf, "INSERT INTO `%s` (`account_id`, `char_id`, `skill`, `tick`) VALUES ", schema_config.skillcooldown_db);
-			for( i = 0; i < count; ++i )
-			{
-				memcpy(&data,RFIFOP(fd,14+i*sizeof(struct skill_cooldown_data)),sizeof(struct skill_cooldown_data));
-				if( i > 0 )
-					StringBuf_AppendStr(&buf, ", ");
-				StringBuf_Printf(&buf, "('%d','%d','%d','%" PRtf "')", aid, cid, data.skill_id, data.tick);
+			struct skill_cooldown_data * data;
+			std::stringstream ss;
+			ss << "INSERT INTO `" << schema_config.skillcooldown_db << "` (`account_id`, `char_id`, `skill`, `tick`) VALUES ";
+			for (int i = 0; i < count; i++) {
+				data = (struct skill_cooldown_data *)RFIFOP(fd, 14 + i * sizeof(struct skill_cooldown_data));
+				if (i > 0)
+					ss << ", ";
+				ss << "('" << aid << "','" << cid << "','" << data->skill_id << "','" << data->tick << "')";
 			}
-			if( SQL_ERROR == Sql_QueryStr(sql_handle, StringBuf_Value(&buf)) )
+
+			if (SQL_ERROR == Sql_QueryStr(sql_handle, ss.str().c_str()))
 				Sql_ShowDebug(sql_handle);
-			StringBuf_Destroy(&buf);
 		}
 		RFIFOSKIP(fd, RFIFOW(fd, 2));
 	}
@@ -962,23 +959,18 @@ int chmapif_parse_save_scdata(int fd){
 		}
 		else if( count > 0 )
 		{
-			struct status_change_data data;
-			StringBuf buf;
-			int i;
+			struct status_change_data * data;
+			std::stringstream ss;
 
-			StringBuf_Init(&buf);
-			StringBuf_Printf(&buf, "INSERT INTO `%s` (`account_id`, `char_id`, `type`, `tick`, `val1`, `val2`, `val3`, `val4`) VALUES ", schema_config.scdata_db);
-			for( i = 0; i < count; ++i )
-			{
-				memcpy (&data, RFIFOP(fd, 14+i*sizeof(struct status_change_data)), sizeof(struct status_change_data));
-				if( i > 0 )
-					StringBuf_AppendStr(&buf, ", ");
-				StringBuf_Printf(&buf, "('%d','%d','%hu','%" PRtf "','%ld','%ld','%ld','%ld')", aid, cid,
-					data.type, data.tick, data.val1, data.val2, data.val3, data.val4);
+			ss << "INSERT INTO `" << schema_config.scdata_db << "` (`account_id`, `char_id`, `type`, `tick`, `val1`, `val2`, `val3`, `val4`) VALUES ";
+			for (int i = 0; i < count; i++) {
+				data = (struct status_change_data *)RFIFOP(fd, 14+i*sizeof(struct status_change_data));
+				if (i > 0)
+					ss << ", ";
+				ss << "(" << aid << "," << cid << "," << data->type << "," << data->tick << "," << data->val1 << "," << data->val2 << "," << data->val3 << "," << data->val4 << ")";
 			}
-			if( SQL_ERROR == Sql_QueryStr(sql_handle, StringBuf_Value(&buf)) )
+			if (SQL_ERROR == Sql_QueryStr(sql_handle, ss.str().c_str()))
 				Sql_ShowDebug(sql_handle);
-			StringBuf_Destroy(&buf);
 		}
 #endif
 		RFIFOSKIP(fd, RFIFOW(fd, 2));
@@ -1360,23 +1352,20 @@ int chmapif_bonus_script_save(int fd) {
 
 		if (count > 0) {
 			char esc_script[MAX_BONUS_SCRIPT_LENGTH*2];
-			struct bonus_script_data bsdata;
-			StringBuf buf;
-			uint8 i;
+			struct bonus_script_data * bsdata;
+			std::stringstream ss;
 
-			StringBuf_Init(&buf);
-			StringBuf_Printf(&buf, "INSERT INTO `%s` (`char_id`, `script`, `tick`, `flag`, `type`, `icon`) VALUES ", schema_config.bonus_script_db);
-			for (i = 0; i < count; ++i) {
-				memcpy(&bsdata, RFIFOP(fd, 9 + i*sizeof(struct bonus_script_data)), sizeof(struct bonus_script_data));
-				Sql_EscapeString(sql_handle, esc_script, bsdata.script_str);
+			ss << "INSERT INTO `" << schema_config.bonus_script_db << "` (`char_id`, `script`, `tick`, `flag`, `type`, `icon`) VALUES ";
+			for (int i = 0; i < count; i++) {
+				bsdata = (struct bonus_script_data *)RFIFOP(fd, 9 + i * sizeof(struct bonus_script_data));
 				if (i > 0)
-					StringBuf_AppendStr(&buf,", ");
-				StringBuf_Printf(&buf, "('%d','%s','%" PRtf "','%d','%d','%d')", cid, esc_script, bsdata.tick, bsdata.flag, bsdata.type, bsdata.icon);
+					ss << ", ";
+				Sql_EscapeString(sql_handle, esc_script, bsdata->script_str);
+				ss << "(" << cid << ", '" << esc_script << "', " << bsdata->tick << ", " << bsdata->flag << ", " << bsdata->type << ", " << bsdata->icon << ")";
 			}
-			if (SQL_ERROR == Sql_QueryStr(sql_handle,StringBuf_Value(&buf)))
+			if (SQL_ERROR == Sql_QueryStr(sql_handle, ss.str().c_str()))
 				Sql_ShowDebug(sql_handle);
 
-			StringBuf_Destroy(&buf);
 			ShowInfo("Bonus Script saved for CID=%d. Total: %d.\n", cid, count);
 		}
 		RFIFOSKIP(fd,RFIFOW(fd,2));

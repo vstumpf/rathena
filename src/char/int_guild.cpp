@@ -4,6 +4,7 @@
 #include "int_guild.hpp"
 
 #include <memory>
+#include <sstream>
 #include <unordered_map>
 
 #include <stdlib.h>
@@ -157,76 +158,73 @@ int inter_guild_tosql( std::shared_ptr<struct guild> g, int flag ){
 	// If we need an update on an existing guild or more update on the new guild
 	if (((flag & GS_BASIC_MASK) && !new_guild) || ((flag & (GS_BASIC_MASK & ~GS_BASIC)) && new_guild))
 	{
-		StringBuf buf;
 		bool add_comma = false;
 
-		StringBuf_Init(&buf);
-		StringBuf_Printf(&buf, "UPDATE `%s` SET ", schema_config.guild_db);
+		std::stringstream ss;
+		ss << "UPDATE `" << schema_config.guild_db << "` SET ";
 
-		if (flag & GS_EMBLEM)
-		{
-			char emblem_data[sizeof(g->emblem_data)*2+1];
-			char* pData = emblem_data;
+		if (flag & GS_EMBLEM) {
+			char emblem_data[sizeof(g->emblem_data) * 2 + 1];
+			char *pData = emblem_data;
 
 			strcat(t_info, " emblem");
 			// Convert emblem_data to hex
-			//TODO: why not use binary directly? [ultramage]
-			for(i=0; i<g->emblem_len; i++){
+			// TODO: why not use binary directly? [ultramage]
+			for (i = 0; i < g->emblem_len; i++) {
 				*pData++ = dataToHex[(g->emblem_data[i] >> 4) & 0x0F];
 				*pData++ = dataToHex[g->emblem_data[i] & 0x0F];
 			}
 			*pData = 0;
-			StringBuf_Printf(&buf, "`emblem_len`=%d, `emblem_id`=%d, `emblem_data`='%s'", g->emblem_len, g->emblem_id, emblem_data);
+			ss << "`emblem_len`=" << g->emblem_len << ", `emblem_id`=" << g->emblem_id
+			   << ", `emblem_data`='" << emblem_data << "'";
 			add_comma = true;
 		}
-		if (flag & GS_BASIC)
-		{
+		if (flag & GS_BASIC) {
 			strcat(t_info, " basic");
-			if( add_comma )
-				StringBuf_AppendStr(&buf, ", ");
+			if (add_comma)
+				ss << ", ";
 			else
 				add_comma = true;
-			StringBuf_Printf(&buf, "`name`='%s', `master`='%s', `char_id`=%d", esc_name, esc_master, g->member[0].char_id);
+			ss << "`name`='" << esc_name << "', `master`='" << esc_master
+			   << "', `char_id`=" << g->member[0].char_id;
 
 			if (g->last_leader_change)
-				StringBuf_Printf(&buf, ", `last_master_change`=FROM_UNIXTIME(%d)", g->last_leader_change);
+				ss << ", `last_master_change`=FROM_UNIXTIME(" << g->last_leader_change << ")";
 		}
-		if (flag & GS_CONNECT)
-		{
+		if (flag & GS_CONNECT) {
 			strcat(t_info, " connect");
-			if( add_comma )
-				StringBuf_AppendStr(&buf, ", ");
+			if (add_comma)
+				ss << ", ";
 			else
 				add_comma = true;
-			StringBuf_Printf(&buf, "`connect_member`=%d, `average_lv`=%d", g->connect_member, g->average_lv);
+			ss << "`connect_member`=" << g->connect_member << ", `average_lv`=" << g->average_lv;
 		}
-		if (flag & GS_MES)
-		{
-			char esc_mes1[sizeof(g->mes1)*2+1];
-			char esc_mes2[sizeof(g->mes2)*2+1];
+		if (flag & GS_MES) {
+			char esc_mes1[sizeof(g->mes1) * 2 + 1];
+			char esc_mes2[sizeof(g->mes2) * 2 + 1];
 
 			strcat(t_info, " mes");
-			if( add_comma )
-				StringBuf_AppendStr(&buf, ", ");
+			if (add_comma)
+				ss << ", ";
 			else
 				add_comma = true;
 			Sql_EscapeStringLen(sql_handle, esc_mes1, g->mes1, strnlen(g->mes1, sizeof(g->mes1)));
 			Sql_EscapeStringLen(sql_handle, esc_mes2, g->mes2, strnlen(g->mes2, sizeof(g->mes2)));
-			StringBuf_Printf(&buf, "`mes1`='%s', `mes2`='%s'", esc_mes1, esc_mes2);
+			ss << "`mes1`='" << esc_mes1 << "', `mes2`='" << esc_mes2 << "'";
 		}
-		if (flag & GS_LEVEL)
-		{
+		if (flag & GS_LEVEL) {
 			strcat(t_info, " level");
-			if( add_comma )
-				StringBuf_AppendStr(&buf, ", ");
-			//else	//last condition using add_coma setting
+			if (add_comma)
+				ss << ", ";
+			// else	//last condition using add_coma setting
 			//	add_comma = true;
-			StringBuf_Printf(&buf, "`guild_lv`=%d, `skill_point`=%d, `exp`=%" PRIu64 ", `next_exp`=%" PRIu64 ", `max_member`=%d", g->guild_lv, g->skill_point, g->exp, g->next_exp, g->max_member);
+			ss << "`guild_lv`=" << g->guild_lv << ", `skill_point`=" << g->skill_point
+			   << ", `exp`=" << g->exp << ", `next_exp`=" << g->next_exp
+			   << ", `max_member`=" << g->max_member;
 		}
-		StringBuf_Printf(&buf, " WHERE `guild_id`=%d", g->guild_id);
-		if( SQL_ERROR == Sql_Query(sql_handle, "%s", StringBuf_Value(&buf)) )
+		ss << " WHERE `guild_id`=" << g->guild_id;
+		if (SQL_ERROR == Sql_Query(sql_handle, "%s", ss.str().c_str()))
 			Sql_ShowDebug(sql_handle);
-		StringBuf_Destroy(&buf);
 	}
 
 	if (flag&GS_MEMBER)
@@ -563,23 +561,22 @@ uint16 inter_guild_storagemax(int guild_id)
 
 // `guild_castle` (`castle_id`, `guild_id`, `economy`, `defense`, `triggerE`, `triggerD`, `nextTime`, `payTime`, `createTime`, `visibleC`, `visibleG0`, `visibleG1`, `visibleG2`, `visibleG3`, `visibleG4`, `visibleG5`, `visibleG6`, `visibleG7`)
 int inter_guildcastle_tosql( std::shared_ptr<struct guild_castle> gc ){
-	StringBuf buf;
 	int i;
-
-	StringBuf_Init(&buf);
-	StringBuf_Printf(&buf, "REPLACE INTO `%s` SET `castle_id`='%d', `guild_id`='%d', `economy`='%d', `defense`='%d', "
-	    "`triggerE`='%d', `triggerD`='%d', `nextTime`='%d', `payTime`='%d', `createTime`='%d', `visibleC`='%d'",
-	    schema_config.guild_castle_db, gc->castle_id, gc->guild_id, gc->economy, gc->defense,
-	    gc->triggerE, gc->triggerD, gc->nextTime, gc->payTime, gc->createTime, gc->visibleC);
+	std::stringstream ss;
+	ss << "REPLACE INTO `" << schema_config.guild_castle_db << "` SET `castle_id`='"
+	   << gc->castle_id << "', `guild_id`='" << gc->guild_id << "', `economy`='" << gc->economy
+	   << "', `defense`='" << gc->defense << "', "
+	   << "`triggerE`='" << gc->triggerE << "', `triggerD`='" << gc->triggerD << "', `nextTime`='"
+	   << gc->nextTime << "', `payTime`='" << gc->payTime << "', `createTime`='" << gc->createTime
+	   << "', `visibleC`='" << gc->visibleC << "'";
 	for (i = 0; i < MAX_GUARDIANS; ++i)
-		StringBuf_Printf(&buf, ", `visibleG%d`='%d'", i, gc->guardian[i].visible);
+		ss << ", `visibleG" << i << "`='" << gc->guardian[i].visible << "'";
 
-	if (SQL_ERROR == Sql_Query(sql_handle, StringBuf_Value(&buf)))
+	if (SQL_ERROR == Sql_Query(sql_handle, ss.str().c_str()))
 		Sql_ShowDebug(sql_handle);
 	else if(charserv_config.save_log)
 		ShowInfo("Saved guild castle (%d)\n", gc->castle_id);
 
-	StringBuf_Destroy(&buf);
 	return 0;
 }
 
@@ -587,7 +584,6 @@ int inter_guildcastle_tosql( std::shared_ptr<struct guild_castle> gc ){
 std::shared_ptr<struct guild_castle> inter_guildcastle_fromsql( int castle_id ){
 	char *data;
 	int i;
-	StringBuf buf;
 
 	std::shared_ptr<struct guild_castle> gc = util::umap_find( castle_db, castle_id );
 
@@ -595,18 +591,16 @@ std::shared_ptr<struct guild_castle> inter_guildcastle_fromsql( int castle_id ){
 		return gc;
 	}
 
-	StringBuf_Init(&buf);
-	StringBuf_AppendStr(&buf, "SELECT `castle_id`, `guild_id`, `economy`, `defense`, `triggerE`, "
-	                    "`triggerD`, `nextTime`, `payTime`, `createTime`, `visibleC`");
+	std::stringstream ss;
+	ss << "SELECT `castle_id`, `guild_id`, `economy`, `defense`, `triggerE`, `triggerD`, "
+		  "`nextTime`, `payTime`, `createTime`, `visibleC`";
 	for (i = 0; i < MAX_GUARDIANS; ++i)
-		StringBuf_Printf(&buf, ", `visibleG%d`", i);
-	StringBuf_Printf(&buf, " FROM `%s` WHERE `castle_id`='%d'", schema_config.guild_castle_db, castle_id);
-	if (SQL_ERROR == Sql_Query(sql_handle, StringBuf_Value(&buf))) {
+		ss << ", `visibleG" << i << "`";
+	ss << " FROM `" << schema_config.guild_castle_db << "` WHERE `castle_id`='" << castle_id << "'";
+	if (SQL_ERROR == Sql_Query(sql_handle, ss.str().c_str())) {
 		Sql_ShowDebug(sql_handle);
-		StringBuf_Destroy(&buf);
-		return NULL;
+		return nullptr;
 	}
-	StringBuf_Destroy(&buf);
 
 	gc = std::make_shared<struct guild_castle>();
 

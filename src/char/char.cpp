@@ -5,6 +5,7 @@
 #include "char.hpp"
 
 #include <memory>
+#include <sstream>
 #include <unordered_map>
 
 #include <stdarg.h>
@@ -259,7 +260,6 @@ int char_mmo_char_tosql(uint32 char_id, struct mmo_charstatus* p){
 	int diff = 0;
 	char save_status[128]; //For displaying save information. [Skotlex]
 	int errors = 0; //If there are any errors while saving, "cp" will not be updated at the end.
-	StringBuf buf;
 
 	if (char_id!=p->char_id) return 0;
 
@@ -271,7 +271,6 @@ int char_mmo_char_tosql(uint32 char_id, struct mmo_charstatus* p){
 		char_get_chardb()[cp->char_id] = cp;
 	}
 
-	StringBuf_Init(&buf);
 	memset(save_status, 0, sizeof(save_status));
 
 	if (
@@ -389,22 +388,20 @@ int char_mmo_char_tosql(uint32 char_id, struct mmo_charstatus* p){
 		}
 
 		//insert here.
-		StringBuf_Clear(&buf);
-		StringBuf_Printf(&buf, "INSERT INTO `%s`(`char_id`,`map`,`x`,`y`) VALUES ", schema_config.memo_db);
-		for( i = 0, count = 0; i < MAX_MEMOPOINTS; ++i )
-		{
-			if( strcmp( "", p->memo_point[i].map ) != 0 ){
-				if( count )
-					StringBuf_AppendStr(&buf, ",");
-				Sql_EscapeString( sql_handle, esc_mapname, p->memo_point[i].map );
-				StringBuf_Printf(&buf, "('%d', '%s', '%d', '%d')", char_id, esc_mapname, p->memo_point[i].x, p->memo_point[i].y);
+		std::stringstream ss;
+		ss << "INSERT INTO `" << schema_config.memo_db << "`(`char_id`,`map`,`x`,`y`) VALUES ";
+		for (i = 0, count = 0; i < MAX_MEMOPOINTS; ++i) {
+			if (p->memo_point[i].map[0] != '\0') {
+				if (count)
+					ss << ",";
+				Sql_EscapeString(sql_handle, esc_mapname, p->memo_point[i].map);
+				ss << "('" << char_id << "', '" << esc_mapname << "', '" << p->memo_point[i].x
+				   << "', '" << p->memo_point[i].y << "')";
 				++count;
 			}
 		}
-		if( count )
-		{
-			if( SQL_ERROR == Sql_QueryStr(sql_handle, StringBuf_Value(&buf)) )
-			{
+		if (count) {
+			if (SQL_ERROR == Sql_QueryStr(sql_handle, ss.str().c_str())) {
 				Sql_ShowDebug(sql_handle);
 				errors++;
 			}
@@ -422,28 +419,26 @@ int char_mmo_char_tosql(uint32 char_id, struct mmo_charstatus* p){
 			errors++;
 		}
 
-		StringBuf_Clear(&buf);
-		StringBuf_Printf(&buf, "INSERT INTO `%s`(`char_id`,`id`,`lv`,`flag`) VALUES ", schema_config.skill_db);
-		//insert here.
-		for( i = 0, count = 0; i < MAX_SKILL; ++i ) {
-			if( p->skill[i].id != 0 && p->skill[i].flag != SKILL_FLAG_TEMPORARY ) {
-
-				if( p->skill[i].lv == 0 && ( p->skill[i].flag == SKILL_FLAG_PERM_GRANTED || p->skill[i].flag == SKILL_FLAG_PERMANENT ) )
+		std::stringstream ss;
+		ss << "INSERT INTO `" << schema_config.skill_db << "`(`char_id`,`id`,`lv`,`flag`) VALUES ";
+		for (i = 0, count = 0; i < MAX_SKILL; i++) {
+			if (p->skill[i].id != 0 && p->skill[i].flag != SKILL_FLAG_TEMPORARY) {
+				if (p->skill[i].lv == 0 && (p->skill[i].flag == SKILL_FLAG_PERM_GRANTED ||
+											p->skill[i].flag == SKILL_FLAG_PERMANENT))
 					continue;
-				if( p->skill[i].flag != SKILL_FLAG_PERMANENT && p->skill[i].flag != SKILL_FLAG_PERM_GRANTED && (p->skill[i].flag - SKILL_FLAG_REPLACED_LV_0) == 0 )
+				if (p->skill[i].flag != SKILL_FLAG_PERMANENT &&
+					p->skill[i].flag != SKILL_FLAG_PERM_GRANTED &&
+					(p->skill[i].flag - SKILL_FLAG_REPLACED_LV_0) == 0)
 					continue;
-				if( count )
-					StringBuf_AppendStr(&buf, ",");
-				StringBuf_Printf(&buf, "('%d','%d','%d','%d')", char_id, p->skill[i].id,
-								 ( (p->skill[i].flag == SKILL_FLAG_PERMANENT || p->skill[i].flag == SKILL_FLAG_PERM_GRANTED) ? p->skill[i].lv : p->skill[i].flag - SKILL_FLAG_REPLACED_LV_0),
-								 p->skill[i].flag == SKILL_FLAG_PERM_GRANTED ? p->skill[i].flag : 0);/* other flags do not need to be saved */
+				if (count)
+					ss << ",";
+				ss << "('" << char_id << "', '" << p->skill[i].id << "', '" << p->skill[i].lv
+				   << "', '" << p->skill[i].flag << "')";
 				++count;
 			}
 		}
-		if( count )
-		{
-			if( SQL_ERROR == Sql_QueryStr(sql_handle, StringBuf_Value(&buf)) )
-			{
+		if (count) {
+			if (SQL_ERROR == Sql_QueryStr(sql_handle, ss.str().c_str())) {
 				Sql_ShowDebug(sql_handle);
 				errors++;
 			}
@@ -469,22 +464,18 @@ int char_mmo_char_tosql(uint32 char_id, struct mmo_charstatus* p){
 			errors++;
 		}
 
-		StringBuf_Clear(&buf);
-		StringBuf_Printf(&buf, "INSERT INTO `%s` (`char_id`, `friend_id`) VALUES ", schema_config.friend_db);
-		for( i = 0, count = 0; i < MAX_FRIENDS; ++i )
-		{
-			if( p->friends[i].char_id > 0 )
-			{
-				if( count )
-					StringBuf_AppendStr(&buf, ",");
-				StringBuf_Printf(&buf, "('%d','%d')", char_id, p->friends[i].char_id);
-				count++;
+		std::stringstream ss;
+		ss << "INSERT INTO `" << schema_config.friend_db << "`(`char_id`,`friend_id`) VALUES ";
+		for (i = 0, count = 0; i < MAX_FRIENDS; i++) {
+			if (p->friends[i].char_id > 0) {
+				if (count)
+					ss << ",";
+				ss << "('" << char_id << "', '" << p->friends[i].char_id << "')";
+				++count;
 			}
 		}
-		if( count )
-		{
-			if( SQL_ERROR == Sql_QueryStr(sql_handle, StringBuf_Value(&buf)) )
-			{
+		if (count) {
+			if (SQL_ERROR == Sql_QueryStr(sql_handle, ss.str().c_str())) {
 				Sql_ShowDebug(sql_handle);
 				errors++;
 			}
@@ -494,28 +485,28 @@ int char_mmo_char_tosql(uint32 char_id, struct mmo_charstatus* p){
 
 #ifdef HOTKEY_SAVING
 	// hotkeys
-	StringBuf_Clear(&buf);
-	StringBuf_Printf(&buf, "REPLACE INTO `%s` (`char_id`, `hotkey`, `type`, `itemskill_id`, `skill_lvl`) VALUES ", schema_config.hotkey_db);
+	std::stringstream ss;
+	ss << "REPLACE INTO `" << schema_config.hotkey_db
+	   << "` (`char_id`, `hotkey`, `type`, `itemskill_id`, `skill_lvl`) VALUES ";
 	diff = 0;
-	for(i = 0; i < ARRAYLENGTH(p->hotkeys); i++){
-		if(memcmp(&p->hotkeys[i], &cp->hotkeys[i], sizeof(struct hotkey)))
-		{
-			if( diff )
-				StringBuf_AppendStr(&buf, ",");// not the first hotkey
-			StringBuf_Printf(&buf, "('%d','%u','%u','%u','%u')", char_id, (unsigned int)i, (unsigned int)p->hotkeys[i].type, p->hotkeys[i].id , (unsigned int)p->hotkeys[i].lv);
+	for (i = 0; i < ARRAYLENGTH(p->hotkeys); i++) {
+		if (memcmp(&p->hotkeys[i], &cp->hotkeys[i], sizeof(struct hotkey))) {
+			if (diff)
+				ss << ",";	// not the first hotkey
+			ss << "('" << char_id << "','" << (unsigned int)i << "','"
+			   << (unsigned int)p->hotkeys[i].type << "','" << p->hotkeys[i].id << "','"
+			   << (unsigned int)p->hotkeys[i].lv << "')";
 			diff = 1;
 		}
 	}
-	if(diff) {
-		if( SQL_ERROR == Sql_QueryStr(sql_handle, StringBuf_Value(&buf)) )
-		{
+	if (diff) {
+		if (SQL_ERROR == Sql_QueryStr(sql_handle, ss.str().c_str())) {
 			Sql_ShowDebug(sql_handle);
 			errors++;
-		} else
-			strcat(save_status, " hotkeys");
+		}
+		strcat(save_status, " hotkeys");
 	}
 #endif
-	StringBuf_Destroy(&buf);
 	if (save_status[0]!='\0' && charserv_config.save_log)
 		ShowInfo("Saved char %d - %s:%s.\n", char_id, p->name, save_status);
 
@@ -528,7 +519,6 @@ int char_mmo_char_tosql(uint32 char_id, struct mmo_charstatus* p){
 
 /// Saves an array of 'item' entries into the specified table.
 int char_memitemdata_to_sql(const struct item items[], int max, int id, enum storage_type tableswitch, uint8 stor_id) {
-	StringBuf buf;
 	SqlStmt* stmt;
 	int i, j, offset = 0, errors = 0;
 	const char *tablename, *selectoption, *printname;
@@ -567,29 +557,29 @@ int char_memitemdata_to_sql(const struct item items[], int max, int id, enum sto
 	// This approach is more complicated than a trivial delete&insert, but
 	// it significantly reduces cpu load on the database server.
 
-	StringBuf_Init(&buf);
-	StringBuf_AppendStr(&buf, "SELECT `id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `bound`, `unique_id`, `enchantgrade`");
+	std::stringstream ss;
+	ss << "SELECT `id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, "
+		  "`expire_time`, `bound`, `unique_id`, `enchantgrade`";
 	if (tableswitch == TABLE_INVENTORY) {
-		StringBuf_Printf(&buf, ", `favorite`, `equip_switch`");
+		ss << ", `favorite`, `equip_switch`";
 		offset = 2;
 	}
 
-	for( i = 0; i < MAX_SLOTS; ++i )
-		StringBuf_Printf(&buf, ", `card%d`", i);
-	for( i = 0; i < MAX_ITEM_RDM_OPT; ++i ) {
-		StringBuf_Printf(&buf, ", `option_id%d`", i);
-		StringBuf_Printf(&buf, ", `option_val%d`", i);
-		StringBuf_Printf(&buf, ", `option_parm%d`", i);
+	for (i = 0; i < MAX_SLOTS; i++)
+		ss << ", `card" << i << "`";
+	for (i = 0; i < MAX_ITEM_RDM_OPT; i++) {
+		ss << ", `option_id" << i << "`";
+		ss << ", `option_val" << i << "`";
+		ss << ", `option_parm" << i << "`";
 	}
-	StringBuf_Printf(&buf, " FROM `%s` WHERE `%s`='%d'", tablename, selectoption, id);
+	ss << " FROM `" << tablename << "` WHERE `" << selectoption << "`='" << id << "'";
 
 	stmt = SqlStmt_Malloc(sql_handle);
-	if( SQL_ERROR == SqlStmt_PrepareStr(stmt, StringBuf_Value(&buf))
+	if( SQL_ERROR == SqlStmt_PrepareStr(stmt, ss.str().c_str())
 	||  SQL_ERROR == SqlStmt_Execute(stmt) )
 	{
 		SqlStmt_ShowDebug(stmt);
 		SqlStmt_Free(stmt);
-		StringBuf_Destroy(&buf);
 		return 1;
 	}
 
@@ -654,21 +644,27 @@ int char_memitemdata_to_sql(const struct item items[], int max, int id, enum sto
 				else
 				{
 					// update all fields.
-					StringBuf_Clear(&buf);
-					StringBuf_Printf(&buf, "UPDATE `%s` SET `amount`='%d', `equip`='%u', `identify`='%d', `refine`='%d',`attribute`='%d', `expire_time`='%u', `bound`='%d', `unique_id`='%" PRIu64 "', `enchantgrade`='%d'",
-						tablename, items[i].amount, items[i].equip, items[i].identify, items[i].refine, items[i].attribute, items[i].expire_time, items[i].bound, items[i].unique_id, items[i].enchantgrade);
+					ss.clear();
+					ss << "UPDATE `" << tablename << "` SET `amount`='" << items[i].amount
+					   << "', `equip`='" << items[i].equip << "', `identify`='" << items[i].identify
+					   << "', `refine`='" << items[i].refine << "',`attribute`='"
+					   << items[i].attribute << "', `expire_time`='" << items[i].expire_time
+					   << "', `bound`='" << items[i].bound << "', `unique_id`='"
+					   << items[i].unique_id << "', `enchantgrade`='" << items[i].enchantgrade
+					   << "'";
 					if (tableswitch == TABLE_INVENTORY)
-						StringBuf_Printf(&buf, ", `favorite`='%d', `equip_switch`='%u'", items[i].favorite, items[i].equipSwitch);
-					for( j = 0; j < MAX_SLOTS; ++j )
-						StringBuf_Printf(&buf, ", `card%d`=%u", j, items[i].card[j]);
-					for( j = 0; j < MAX_ITEM_RDM_OPT; ++j ) {
-						StringBuf_Printf(&buf, ", `option_id%d`=%d", j, items[i].option[j].id);
-						StringBuf_Printf(&buf, ", `option_val%d`=%d", j, items[i].option[j].value);
-						StringBuf_Printf(&buf, ", `option_parm%d`=%d", j, items[i].option[j].param);
+						ss << ", `favorite`='" << items[i].favorite << "', `equip_switch`='"
+						   << items[i].equipSwitch << "'";
+					for (j = 0; j < MAX_SLOTS; j++)
+						ss << ", `card" << j << "`='" << items[i].card[j] << "'";
+					for (j = 0; j < MAX_ITEM_RDM_OPT; j++) {
+						ss << ", `option_id" << j << "`='" << items[i].option[j].id
+						   << "', `option_value" << j << "`='" << items[i].option[j].value
+						   << "', `option_param" << j << "`='" << items[i].option[j].param << "'";
 					}
-					StringBuf_Printf(&buf, " WHERE `id`='%d' LIMIT 1", item.id);
+					ss << " WHERE `id`='" << item.id << "' LIMIT 1";
 
-					if( SQL_ERROR == Sql_QueryStr(sql_handle, StringBuf_Value(&buf)) )
+					if (SQL_ERROR == Sql_QueryStr(sql_handle, ss.str().c_str()))
 					{
 						Sql_ShowDebug(sql_handle);
 						errors++;
@@ -690,61 +686,63 @@ int char_memitemdata_to_sql(const struct item items[], int max, int id, enum sto
 	}
 	SqlStmt_Free(stmt);
 
-	StringBuf_Clear(&buf);
-	StringBuf_Printf(&buf, "INSERT INTO `%s`(`%s`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `bound`, `unique_id`, `enchantgrade`", tablename, selectoption);
+	ss.clear();
+	ss << "INSERT INTO `" << tablename << "`(`" << selectoption
+	   << "`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, "
+		  "`bound`, `unique_id`, `enchantgrade`";
 	if (tableswitch == TABLE_INVENTORY)
-		StringBuf_Printf(&buf, ", `favorite`, `equip_switch`");
-	for( j = 0; j < MAX_SLOTS; ++j )
-		StringBuf_Printf(&buf, ", `card%d`", j);
-	for( j = 0; j < MAX_ITEM_RDM_OPT; ++j ) {
-		StringBuf_Printf(&buf, ", `option_id%d`", j);
-		StringBuf_Printf(&buf, ", `option_val%d`", j);
-		StringBuf_Printf(&buf, ", `option_parm%d`", j);
+		ss << ", `favorite`, `equip_switch`";
+	for (j = 0; j < MAX_SLOTS; j++)
+		ss << ", `card" << j << "`";
+	for (j = 0; j < MAX_ITEM_RDM_OPT; j++) {
+		ss << ", `option_id" << j << "`";
+		ss << ", `option_val" << j << "`";
+		ss << ", `option_parm" << j << "`";
 	}
-	StringBuf_AppendStr(&buf, ") VALUES ");
+	ss << ") VALUES ";
 
 	found = false;
 	// insert non-matched items into the db as new items
-	for( i = 0; i < max; ++i )
+	for (i = 0; i < max; i++)
 	{
 		// skip empty and already matched entries
-		if( items[i].nameid == 0 || flag[i] )
+		if (items[i].nameid == 0 || flag[i])
 			continue;
 
-		if( found )
-			StringBuf_AppendStr(&buf, ",");
+		if (found)
+			ss << ", ";
 		else
 			found = true;
 
-		StringBuf_Printf(&buf, "('%d', '%u', '%d', '%u', '%d', '%d', '%d', '%u', '%d', '%" PRIu64 "', '%d'",
-			id, items[i].nameid, items[i].amount, items[i].equip, items[i].identify, items[i].refine, items[i].attribute, items[i].expire_time, items[i].bound, items[i].unique_id, items[i].enchantgrade);
+		ss << "('" << id << "', '" << items[i].nameid << "', '" << items[i].amount << "', '"
+		   << items[i].equip << "', '" << items[i].identify << "', '" << items[i].refine << "', '"
+		   << items[i].attribute << "', '" << items[i].expire_time << "', '" << items[i].bound
+		   << "', '" << items[i].unique_id << "', '" << items[i].enchantgrade << "'";
 		if (tableswitch == TABLE_INVENTORY)
-			StringBuf_Printf(&buf, ", '%d', '%u'", items[i].favorite, items[i].equipSwitch);
-		for( j = 0; j < MAX_SLOTS; ++j )
-			StringBuf_Printf(&buf, ", '%u'", items[i].card[j]);
-		for( j = 0; j < MAX_ITEM_RDM_OPT; ++j ) {
-			StringBuf_Printf(&buf, ", '%d'", items[i].option[j].id);
-			StringBuf_Printf(&buf, ", '%d'", items[i].option[j].value);
-			StringBuf_Printf(&buf, ", '%d'", items[i].option[j].param);
+			ss << ", '" << items[i].favorite << "', '" << items[i].equipSwitch << "'";
+		for (j = 0; j < MAX_SLOTS; j++)
+			ss << ", '" << items[i].card[j] << "'";
+		for (j = 0; j < MAX_ITEM_RDM_OPT; j++) {
+			ss << ", '" << items[i].option[j].id << "'";
+			ss << ", '" << items[i].option[j].value << "'";
+			ss << ", '" << items[i].option[j].param << "'";
 		}
-		StringBuf_AppendStr(&buf, ")");
+		ss << ")";
 	}
 
-	if( found && SQL_ERROR == Sql_QueryStr(sql_handle, StringBuf_Value(&buf)) )
-	{
+	if (found && SQL_ERROR == Sql_QueryStr(sql_handle, ss.str().c_str())) {
 		Sql_ShowDebug(sql_handle);
 		errors++;
 	}
 
-	ShowInfo("Saved %s (%d) data to table %s for %s: %d\n", printname, stor_id, tablename, selectoption, id);
-	StringBuf_Destroy(&buf);
+	ShowInfo("Saved %s (%d) data to table %s for %s: %d\n", printname, stor_id, tablename,
+			 selectoption, id);
 	aFree(flag);
 
 	return errors;
 }
 
 bool char_memitemdata_from_sql(struct s_storage* p, int max, int id, enum storage_type tableswitch, uint8 stor_id) {
-	StringBuf buf;
 	SqlStmt* stmt;
 	int i,j, offset = 0, max2;
 	struct item item, *storage;
@@ -796,28 +794,26 @@ bool char_memitemdata_from_sql(struct s_storage* p, int max, int id, enum storag
 		return false;
 	}
 
-	StringBuf_Init(&buf);
-	StringBuf_AppendStr(&buf, "SELECT `id`,`nameid`,`amount`,`equip`,`identify`,`refine`,`attribute`,`expire_time`,`bound`,`unique_id`,`enchantgrade`");
+	std::stringstream ss;
+	ss << "SELECT "
+		  "`id`,`nameid`,`amount`,`equip`,`identify`,`refine`,`attribute`,`expire_time`,`bound`,`"
+		  "unique_id`,`enchantgrade`";
 	if (tableswitch == TABLE_INVENTORY) {
-		StringBuf_Printf(&buf, ", `favorite`, `equip_switch`");
+		ss << ", `favorite`, `equip_switch`";
 		offset = 2;
 	}
-	for( j = 0; j < MAX_SLOTS; ++j )
-		StringBuf_Printf(&buf, ",`card%d`", j);
-	for( j = 0; j < MAX_ITEM_RDM_OPT; ++j ) {
-		StringBuf_Printf(&buf, ", `option_id%d`", j);
-		StringBuf_Printf(&buf, ", `option_val%d`", j);
-		StringBuf_Printf(&buf, ", `option_parm%d`", j);
+	for (j = 0; j < MAX_SLOTS; j++)
+		ss << ",`card" << j << "`";
+	for (j = 0; j < MAX_ITEM_RDM_OPT; j++) {
+		ss << ", `option_id" << j << "`";
+		ss << ", `option_val" << j << "`";
+		ss << ", `option_parm" << j << "`";
 	}
-	StringBuf_Printf(&buf, " FROM `%s` WHERE `%s`=? ORDER BY `nameid`", tablename, selectoption );
+	ss << " FROM `" << tablename << "` WHERE `" << selectoption << "` = '" << id << "'";
 
-	if( SQL_ERROR == SqlStmt_PrepareStr(stmt, StringBuf_Value(&buf))
-		||	SQL_ERROR == SqlStmt_BindParam(stmt, 0, SQLDT_INT, &id, 0)
-		||	SQL_ERROR == SqlStmt_Execute(stmt) )
-	{
+	if (SQL_ERROR == SqlStmt_PrepareStr(stmt, ss.str().c_str()) || SQL_ERROR == SqlStmt_Execute(stmt)) {
 		SqlStmt_ShowDebug(stmt);
 		SqlStmt_Free(stmt);
-		StringBuf_Destroy(&buf);
 		return false;
 	}
 
@@ -852,7 +848,6 @@ bool char_memitemdata_from_sql(struct s_storage* p, int max, int id, enum storag
 
 	SqlStmt_FreeResult(stmt);
 	SqlStmt_Free(stmt);
-	StringBuf_Destroy(&buf);
 
 	return true;
 }
@@ -1037,7 +1032,6 @@ int char_mmo_char_fromsql(uint32 char_id, struct mmo_charstatus* p, bool load_ev
 	struct hotkey tmp_hotkey;
 	int hotkey_num;
 #endif
-	StringBuf msg_buf;
 	char sex[2];
 
 	memset(p, 0, sizeof(struct mmo_charstatus));
@@ -1153,13 +1147,12 @@ int char_mmo_char_fromsql(uint32 char_id, struct mmo_charstatus* p, bool load_ev
 	}
 	p->sex = char_mmo_gender(NULL, p, sex[0]);
 
-	StringBuf_Init(&msg_buf);
-	StringBuf_AppendStr(&msg_buf, " status");
+	std::stringstream ss;
+	ss << " status";
 
 	if (!load_everything) // For quick selection of data when displaying the char menu
 	{
 		SqlStmt_Free(stmt);
-		StringBuf_Destroy(&msg_buf);
 		return 1;
 	}
 
@@ -1177,7 +1170,7 @@ int char_mmo_char_fromsql(uint32 char_id, struct mmo_charstatus* p, bool load_ev
 	{
 		memcpy(&p->memo_point[i], &tmp_point, sizeof(tmp_point));
 	}
-	StringBuf_AppendStr(&msg_buf, " memo");
+	ss << " memo";
 
 	//read skill
 	//`skill` (`char_id`, `id`, `lv`)
@@ -1200,7 +1193,7 @@ int char_mmo_char_fromsql(uint32 char_id, struct mmo_charstatus* p, bool load_ev
 		else
 			ShowWarning("mmo_char_fromsql: ignoring invalid skill (id=%u,lv=%u) of character %s (AID=%d,CID=%d)\n", tmp_skill.id, tmp_skill.lv, p->name, p->account_id, p->char_id);
 	}
-	StringBuf_Printf(&msg_buf, " %d skills", skill_count);
+	ss << " " << skill_count << " skills";
 
 	//read friends
 	//`friends` (`char_id`, `friend_id`)
@@ -1214,7 +1207,7 @@ int char_mmo_char_fromsql(uint32 char_id, struct mmo_charstatus* p, bool load_ev
 
 	for( i = 0; i < MAX_FRIENDS && SQL_SUCCESS == SqlStmt_NextRow(stmt); ++i )
 		memcpy(&p->friends[i], &tmp_friend, sizeof(tmp_friend));
-	StringBuf_AppendStr(&msg_buf, " friends");
+	ss << " friends";
 
 #ifdef HOTKEY_SAVING
 	//read hotkeys
@@ -1235,16 +1228,16 @@ int char_mmo_char_fromsql(uint32 char_id, struct mmo_charstatus* p, bool load_ev
 		else
 			ShowWarning("mmo_char_fromsql: ignoring invalid hotkey (hotkey=%d,type=%u,id=%u,lv=%u) of character %s (AID=%d,CID=%d)\n", hotkey_num, tmp_hotkey.type, tmp_hotkey.id, tmp_hotkey.lv, p->name, p->account_id, p->char_id);
 	}
-	StringBuf_AppendStr(&msg_buf, " hotkeys");
+	ss << " hotkeys";
 #endif
 
 	/* Mercenary Owner DataBase */
 	mercenary_owner_fromsql(char_id, p);
-	StringBuf_AppendStr(&msg_buf, " mercenary");
+	ss << " mercenary";
 
 
 	if (charserv_config.save_log)
-		ShowInfo("Loaded char (%d - %s): %s\n", char_id, p->name, StringBuf_Value(&msg_buf)); //ok. all data load successfully!
+		ShowInfo("Loaded char (%d - %s): %s\n", char_id, p->name, ss.str().c_str()); //ok. all data load successfully!
 	SqlStmt_Free(stmt);
 
 	std::shared_ptr<struct mmo_charstatus> cp = util::umap_find( char_get_chardb(), char_id );
@@ -1257,7 +1250,6 @@ int char_mmo_char_fromsql(uint32 char_id, struct mmo_charstatus* p, bool load_ev
 
 	memcpy( cp.get(), p, sizeof( struct mmo_charstatus ) );
 
-	StringBuf_Destroy(&msg_buf);
 	return 1;
 }
 

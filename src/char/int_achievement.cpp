@@ -3,6 +3,8 @@
 
 #include "int_achievement.hpp"
 
+#include <sstream>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +32,6 @@ struct achievement *mapif_achievements_fromsql(uint32 char_id, int *count)
 	struct achievement *achievelog = NULL;
 	struct achievement tmp_achieve;
 	SqlStmt *stmt;
-	StringBuf buf;
 	int i;
 
 	if (!count)
@@ -38,19 +39,18 @@ struct achievement *mapif_achievements_fromsql(uint32 char_id, int *count)
 
 	memset(&tmp_achieve, 0, sizeof(tmp_achieve));
 
-	StringBuf_Init(&buf);
-	StringBuf_AppendStr(&buf, "SELECT `id`, COALESCE(UNIX_TIMESTAMP(`completed`),0), COALESCE(UNIX_TIMESTAMP(`rewarded`),0)");
+	std::stringstream ss;
+	ss << "SELECT `id`, COALESCE(UNIX_TIMESTAMP(`completed`),0), "
+		  "COALESCE(UNIX_TIMESTAMP(`rewarded`),0)";
 	for (i = 0; i < MAX_ACHIEVEMENT_OBJECTIVES; ++i)
-		StringBuf_Printf(&buf, ", `count%d`", i + 1);
-	StringBuf_Printf(&buf, " FROM `%s` WHERE `char_id` = '%u'", schema_config.achievement_table, char_id);
+		ss << ", `count" << (i + 1) << "`";
+	ss << " FROM `" << schema_config.achievement_table << "` WHERE `char_id` = '" << char_id << "'";
 
 	stmt = SqlStmt_Malloc(sql_handle);
-	if( SQL_ERROR == SqlStmt_PrepareStr(stmt, StringBuf_Value(&buf))
-	||  SQL_ERROR == SqlStmt_Execute(stmt) )
-	{
+	if (SQL_ERROR == SqlStmt_PrepareStr(stmt, ss.str().c_str()) ||
+		SQL_ERROR == SqlStmt_Execute(stmt)) {
 		SqlStmt_ShowDebug(stmt);
 		SqlStmt_Free(stmt);
-		StringBuf_Destroy(&buf);
 		*count = 0;
 		return NULL;
 	}
@@ -79,7 +79,6 @@ struct achievement *mapif_achievements_fromsql(uint32 char_id, int *count)
 	}
 
 	SqlStmt_Free(stmt);
-	StringBuf_Destroy(&buf);
 
 	ShowInfo("achievement load complete from DB - id: %d (total: %d)\n", char_id, *count);
 
@@ -108,9 +107,7 @@ bool mapif_achievement_delete(uint32 char_id, int achievement_id)
  * @param ad: Achievement data
  * @return false in case of errors, true otherwise
  */
-bool mapif_achievement_add(uint32 char_id, struct achievement* ad)
-{
-	StringBuf buf;
+bool mapif_achievement_add(uint32 char_id, struct achievement *ad) {
 	int i;
 
 	ARR_FIND( 0, MAX_ACHIEVEMENT_OBJECTIVES, i, ad->count[i] != 0 );
@@ -120,33 +117,30 @@ bool mapif_achievement_add(uint32 char_id, struct achievement* ad)
 		return true;
 	}
 
-	StringBuf_Init(&buf);
-	StringBuf_Printf(&buf, "INSERT INTO `%s` (`char_id`, `id`, `completed`, `rewarded`", schema_config.achievement_table);
+	std::stringstream ss;
+	ss << "INSERT INTO `" << schema_config.achievement_table
+	   << "` (`char_id`, `id`, `completed`, `rewarded`";
 	for (i = 0; i < MAX_ACHIEVEMENT_OBJECTIVES; ++i)
-		StringBuf_Printf(&buf, ", `count%d`", i + 1);
-	StringBuf_AppendStr(&buf, ")");
-	StringBuf_Printf(&buf, " VALUES ('%u', '%d',", char_id, ad->achievement_id, (uint32)ad->completed, (uint32)ad->rewarded);
-	if( ad->completed ){
-		StringBuf_Printf(&buf, "FROM_UNIXTIME('%u'),", (uint32)ad->completed);
-	}else{
-		StringBuf_AppendStr(&buf, "NULL,");
+		ss << ", `count" << (i + 1) << "`";
+	ss << ") VALUES ('" << char_id << "', '" << ad->achievement_id << "',";
+	if (ad->completed) {
+		ss << "FROM_UNIXTIME('" << (uint32)ad->completed << "'),";
+	} else {
+		ss << "NULL,";
 	}
-	if( ad->rewarded ){
-		StringBuf_Printf(&buf, "FROM_UNIXTIME('%u')", (uint32)ad->rewarded);
-	}else{
-		StringBuf_AppendStr(&buf, "NULL");
+	if (ad->rewarded) {
+		ss << "FROM_UNIXTIME('" << (uint32)ad->rewarded << "')";
+	} else {
+		ss << "NULL";
 	}
 	for (i = 0; i < MAX_ACHIEVEMENT_OBJECTIVES; ++i)
-		StringBuf_Printf(&buf, ", '%d'", ad->count[i]);
-	StringBuf_AppendStr(&buf, ")");
+		ss << ", '" << ad->count[i] << "'";
+	ss << ")";
 
-	if (SQL_ERROR == Sql_QueryStr(sql_handle, StringBuf_Value(&buf))) {
+	if (SQL_ERROR == Sql_QueryStr(sql_handle, ss.str().c_str())) {
 		Sql_ShowDebug(sql_handle);
-		StringBuf_Destroy(&buf);
 		return false;
 	}
-
-	StringBuf_Destroy(&buf);
 
 	return true;
 }
@@ -157,34 +151,26 @@ bool mapif_achievement_add(uint32 char_id, struct achievement* ad)
  * @param ad: Achievement data
  * @return false in case of errors, true otherwise
  */
-bool mapif_achievement_update(uint32 char_id, struct achievement* ad)
-{
-	StringBuf buf;
-	int i;
-
-	StringBuf_Init(&buf);
-	StringBuf_Printf(&buf, "UPDATE `%s` SET ", schema_config.achievement_table);
-	if( ad->completed ){
-		StringBuf_Printf(&buf, "`completed` = FROM_UNIXTIME('%u'),", (uint32)ad->completed);
-	}else{
-		StringBuf_AppendStr(&buf, "`completed` = NULL,");
+bool mapif_achievement_update(uint32 char_id, struct achievement *ad) {
+	std::stringstream ss;
+	ss << "UPDATE `" << schema_config.achievement_table << "` SET ";
+	if (ad->completed) {
+		ss << "`completed` = FROM_UNIXTIME('" << (uint32)ad->completed << "'),";
+	} else {
+		ss << "`completed` = NULL,";
 	}
-	if( ad->rewarded ){
-		StringBuf_Printf(&buf, "`rewarded` = FROM_UNIXTIME('%u')", (uint32)ad->rewarded);
-	}else{
-		StringBuf_AppendStr(&buf, "`rewarded` = NULL");
+	if (ad->rewarded) {
+		ss << "`rewarded` = FROM_UNIXTIME('" << (uint32)ad->rewarded << "')";
+	} else {
+		ss << "`rewarded` = NULL";
 	}
-	for (i = 0; i < MAX_ACHIEVEMENT_OBJECTIVES; ++i)
-		StringBuf_Printf(&buf, ", `count%d` = '%d'", i + 1, ad->count[i]);
-	StringBuf_Printf(&buf, " WHERE `id` = %d AND `char_id` = %u", ad->achievement_id, char_id);
-
-	if (SQL_ERROR == Sql_QueryStr(sql_handle, StringBuf_Value(&buf))) {
+	for (int i = 0; i < MAX_ACHIEVEMENT_OBJECTIVES; ++i)
+		ss << ", `count" << (i + 1) << "` = '" << ad->count[i] << "'";
+	ss << " WHERE `id` = " << ad->achievement_id << " AND `char_id` = '" << char_id << "'";
+	if (SQL_ERROR == Sql_QueryStr(sql_handle, ss.str().c_str())) {
 		Sql_ShowDebug(sql_handle);
-		StringBuf_Destroy(&buf);
 		return false;
 	}
-
-	StringBuf_Destroy(&buf);
 
 	return true;
 }
