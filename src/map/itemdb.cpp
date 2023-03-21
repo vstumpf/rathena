@@ -1357,6 +1357,112 @@ std::string ItemDatabase::create_item_link(struct item& item) {
 	return this->create_item_link(item, data);
 }
 
+/**
+ * Generates an item link string
+ * @param data: Item info
+ * @return <ITEML> string for the item
+ * @author [Cydh]
+ **/
+std::string ItemDatabase::create_item_link_new(const struct item& item, const item_data& data) {
+	std::string itemstr;
+	const struct item_data* id = &data;
+
+// All these dates are unconfirmed
+#if PACKETVER >= 20151104
+	if (battle_config.feature_itemlink) {
+#if PACKETVER >= 20160113
+		const std::string start_tag = "<ITEML>";
+		const std::string closing_tag = "</ITEML>";
+#else  // PACKETVER >= 20151104
+		const std::string start_tag = "<ITEM>";
+		const std::string closing_tag = "</ITEM>";
+#endif
+
+		itemstr += start_tag;
+
+		itemstr += util::string_left_pad(util::base62_encode(id->equip), '0', 5);
+		itemstr += itemdb_isequip2(id) ? "1" : "0";
+		itemstr += util::base62_encode(item.nameid);
+		if (item.refine > 0) {
+			itemstr += "%" + util::string_left_pad(util::base62_encode(item.refine), '0', 2);
+		}
+
+#if PACKETVER >= 20161116
+		if (itemdb_isequip2(id)) {
+			itemstr += "&" + util::string_left_pad(util::base62_encode(id->look), '0', 2);
+		}
+#endif
+
+#if PACKETVER >= 20200724
+		itemstr += "'" + util::string_left_pad(util::base62_encode(item.enchantgrade), '0', 2);
+#endif
+
+#if PACKETVER >= 20200724
+		const std::string card_sep = ")";
+		const std::string optid_sep = "+";
+		const std::string optpar_sep = ",";
+		const std::string optval_sep = "-";
+#elif PACKETVER >= 20161116
+		const std::string card_sep = "(";
+		const std::string optid_sep = "*";
+		const std::string optpar_sep = "+";
+		const std::string optval_sep = ",";
+#else  // PACKETVER >= 20151104
+		const std::string card_sep = "'";
+		const std::string optid_sep = ")";
+		const std::string optpar_sep = "*";
+		const std::string optval_sep = "+";
+#endif
+
+		for (uint8 i = 0; i < MAX_SLOTS; ++i) {
+			itemstr += card_sep + util::string_left_pad(util::base62_encode(item.card[i]), '0', 2);
+		}
+
+		for (uint8 i = 0; i < MAX_ITEM_RDM_OPT; ++i) {
+			if (item.option[i].id == 0) {
+				break;	// ignore options including ones beyond this one since the client won't even
+						// display them
+			}
+			// Option ID
+			itemstr +=
+				optid_sep + util::string_left_pad(util::base62_encode(item.option[i].id), '0', 2);
+			// Param
+			itemstr += optpar_sep +
+					   util::string_left_pad(util::base62_encode(item.option[i].param), '0', 2);
+			// Value
+			itemstr += optval_sep +
+					   util::string_left_pad(util::base62_encode(item.option[i].value), '0', 2);
+		}
+
+		itemstr += closing_tag;
+		if ((itemdb_isequip2(id)) && (data.slots == 0))
+			itemstr += " [" + std::to_string(data.slots) + "]";
+
+		return itemstr;
+	}
+#endif
+
+	// This can be reached either because itemlinks are disabled via configuration or because the
+	// packet version does not support the feature If that's the case then we format the item
+	// prepending the refine and appending the slots
+	if (item.refine > 0)
+		itemstr += "+" + std::to_string(item.refine) + " ";
+
+	itemstr += data.ename;
+
+	if (itemdb_isequip2(id))
+		itemstr += "[" + std::to_string(data.slots) + "]";
+
+	return itemstr;
+}
+
+std::string ItemDatabase::create_item_link_new(const item_data* data) {
+	struct item it = {};
+	it.nameid = data->nameid;
+
+	return this->create_item_link_new(it, *data);
+}
+
 std::string ItemDatabase::create_item_link_for_mes( std::shared_ptr<item_data>& data, bool use_brackets, const char* name ){
 	if( data == nullptr ){
 		return "Unknown item";
@@ -2858,6 +2964,31 @@ uint16 itemdb_searchname_array(std::map<t_itemid, std::shared_ptr<item_data>> &d
 	return static_cast<uint16>(data.size());
 }
 
+/*==========================================
+ * Finds up to N matches. Returns number of matches [Skotlex]
+ * @param *data
+ * @param size
+ * @param str
+ * @return Number of matches item
+ *------------------------------------------*/
+uint16 itemdb_searchname_array_new(std::map<t_itemid, const item_data*>& data, uint16 size,
+							   const char* str) {
+	for (const auto& item : item_db) {
+		auto &id = item.second;
+
+		if (id == nullptr)
+			continue;
+		if (stristr(id->name.c_str(), str) != nullptr ||
+			stristr(id->ename.c_str(), str) != nullptr || strcmpi(id->ename.c_str(), str) == 0)
+			data[id->nameid] = id.get();
+	}
+
+	if (data.size() > size)
+		util::map_resize(data, size);
+
+	return static_cast<uint16>(data.size());
+}
+
 std::shared_ptr<s_item_group_entry> get_random_itemsubgroup(std::shared_ptr<s_item_group_random> random) {
 	if (random == nullptr)
 		return nullptr;
@@ -3115,7 +3246,7 @@ struct item_data* itemdb_search(t_itemid nameid) {
 * @param id Item data
 * @return True if item is equip, false otherwise
 */
-bool itemdb_isequip2(struct item_data *id) {
+bool itemdb_isequip2(const struct item_data *id) {
 	nullpo_ret(id);
 	switch (id->type) {
 		case IT_WEAPON:

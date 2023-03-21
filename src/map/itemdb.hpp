@@ -2155,8 +2155,11 @@ public:
 	std::string create_item_link( std::shared_ptr<item_data>& data );
 	std::string create_item_link_for_mes( std::shared_ptr<item_data>& data, bool use_brackets, const char* name );
 
+	std::string create_item_link_new(const item_data *data);
+	std::string create_item_link_new(const struct item &item, const item_data &data);
+
 private:
-	std::string create_item_link(struct item& item, std::shared_ptr<item_data>& data);
+	std::string create_item_link(struct item &item, std::shared_ptr<item_data> &data);
 };
 
 extern ItemDatabase item_db;
@@ -2364,6 +2367,8 @@ public:
 extern ItemPackageDatabase item_package_db;
 
 uint16 itemdb_searchname_array(std::map<t_itemid, std::shared_ptr<item_data>> &data, uint16 size, const char *str);
+uint16 itemdb_searchname_array_new(std::map<t_itemid, const item_data *> &data, uint16 size,
+							   const char *str);
 struct item_data* itemdb_search(t_itemid nameid);
 
 [[deprecated("Please upgrade your code to item_db.exists() or item_db.find()! This function will be dropped soon!")]]
@@ -2415,7 +2420,7 @@ bool itemdb_ishatched_egg(struct item* item);
 #define itemdb_canmail(item, gmlv) itemdb_isrestricted(item , gmlv, 0, itemdb_canmail_sub)
 #define itemdb_canauction(item, gmlv) itemdb_isrestricted(item , gmlv, 0, itemdb_canauction_sub)
 
-bool itemdb_isequip2(struct item_data *id);
+bool itemdb_isequip2(const struct item_data *id);
 #define itemdb_isequip(nameid) itemdb_isequip2(itemdb_search(nameid))
 char itemdb_isidentified(t_itemid nameid);
 bool itemdb_isstackable2(struct item_data *id);

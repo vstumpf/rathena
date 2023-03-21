@@ -114,6 +114,15 @@ public:
 		}
 	}
 
+	virtual const datatype* cfind(keytype key) {
+		auto it = this->data.find(key);
+		if (it != this->data.end()) {
+			return it->second.get();
+		} else {
+			return nullptr;
+		}
+	}
+
 	virtual void put( keytype key, std::shared_ptr<datatype> ptr ){
 		this->data[key] = ptr;
 	}
@@ -169,6 +178,14 @@ public:
 			return TypesafeYamlDatabase<keytype, datatype>::find( key );
 		}else{
 			return cache[this->calculateCacheKey( key )];
+		}
+	}
+
+	const datatype* cfind(keytype key) override {
+		if (this->cache.empty() || key >= this->cache.size()) {
+			return TypesafeYamlDatabase<keytype, datatype>::cfind(key);
+		} else {
+			return cache[this->calculateCacheKey(key)].get();
 		}
 	}
 

@@ -8326,7 +8326,83 @@ ACMD_FUNC(whodrops)
 	}
 	auto end = std::chrono::steady_clock::now();
 	auto diff = end - start;
-	ShowInfo("Time taken: %lld us\n", std::chrono::duration_cast<std::chrono::microseconds>(diff).count());
+	ShowInfo("[old] Time taken: %lldus, [%s]\n",
+			 std::chrono::duration_cast<std::chrono::microseconds>(diff).count(), message);
+	return 0;
+}
+
+/*==========================================
+ * Show who drops the item.
+ *------------------------------------------*/
+ACMD_FUNC(cwhodrops) {
+	auto start = std::chrono::steady_clock::now();
+	if (!message || !*message) {
+		clif_displaymessage(
+			fd, msg_txt(sd, 1284));	 // Please enter item name/ID (usage: @whodrops <item name/ID>).
+		return -1;
+	}
+
+	std::map<t_itemid, const item_data*> item_array = {};
+	uint16 count = 1;
+	t_itemid itemid = strtoul(message, nullptr, 10);
+
+	if (itemid == 0)  // Entered a string
+		count = itemdb_searchname_array_new(item_array, MAX_SEARCH, message);
+	else {
+		if ((item_array[0] = item_db.cfind(itemid)) == nullptr)
+			count = 0;
+	}
+
+	if (!count) {
+		clif_displaymessage(fd, msg_txt(sd, 19));  // Invalid item ID or name.
+		return -1;
+	}
+
+	if (count == MAX_SEARCH) {
+		sprintf(atcmd_output, msg_txt(sd, 269), MAX_SEARCH);  // Displaying first %d matches
+		clif_displaymessage(fd, atcmd_output);
+	}
+	for (const auto& result : item_array) {
+		auto id = result.second;
+
+		sprintf(atcmd_output, msg_txt(sd, 1285), item_db.create_item_link_new(id).c_str(),
+				id->nameid);  // Item: '%s' (ID:%u)
+		clif_displaymessage(fd, atcmd_output);
+
+		if (id->mob[0].chance == 0) {
+			strcpy(atcmd_output, msg_txt(sd, 1286));  //  - Item is not dropped by mobs.
+			clif_displaymessage(fd, atcmd_output);
+		} else {
+			sprintf(
+				atcmd_output, msg_txt(sd, 1287),
+				MAX_SEARCH);  //  - Common mobs with highest drop chance (only max %d are listed):
+			clif_displaymessage(fd, atcmd_output);
+
+			for (uint16 j = 0; j < MAX_SEARCH && id->mob[j].chance > 0; j++) {
+				int dropchance = id->mob[j].chance;
+				auto mob = mob_db.cfind(id->mob[j].id);
+				if (!mob)
+					continue;
+
+#ifdef RENEWAL_DROP
+				if (battle_config.atcommand_mobinfo_type) {
+					dropchance = dropchance * pc_level_penalty_mod(sd, PENALTY_DROP, mob) / 100;
+					if (dropchance <= 0 && !battle_config.drop_rate0item)
+						dropchance = 1;
+				}
+#endif
+				if (pc_isvip(sd))  // Display item rate increase for VIP
+					dropchance += (dropchance * battle_config.vip_drop_increase) / 100;
+				sprintf(atcmd_output, "- %s (%d): %02.02f%%", mob->jname.c_str(), id->mob[j].id,
+						dropchance / 100.);
+				clif_displaymessage(fd, atcmd_output);
+			}
+		}
+	}
+	auto end = std::chrono::steady_clock::now();
+	auto diff = end - start;
+	ShowInfo("[new] Time taken: %lldus, [%s]\n",
+			 std::chrono::duration_cast<std::chrono::microseconds>(diff).count(), message);
 	return 0;
 }
 
@@ -10848,7 +10924,7 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(storage),
 		ACMD_DEF(guildstorage),
 		ACMD_DEF(option),
-		ACMD_DEF(hide), // + /hide
+		ACMD_DEF(hide),	 // + /hide
 		ACMD_DEFR(jobchange, ATCMD_NOCONSOLE),
 		ACMD_DEF(kill),
 		ACMD_DEF(alive),
@@ -10860,8 +10936,8 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(healap),
 		ACMD_DEF(item),
 		ACMD_DEF(item2),
-		ACMD_DEF2("itembound",item),
-		ACMD_DEF2("itembound2",item2),
+		ACMD_DEF2("itembound", item),
+		ACMD_DEF2("itembound2", item2),
 		ACMD_DEF(itemreset),
 		ACMD_DEF(clearstorage),
 		ACMD_DEF(cleargstorage),
@@ -10908,14 +10984,14 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(petfriendly),
 		ACMD_DEF(pethungry),
 		ACMD_DEF(petrename),
-		ACMD_DEF(recall), // + /recall
+		ACMD_DEF(recall),  // + /recall
 		ACMD_DEF(night),
 		ACMD_DEF(day),
 		ACMD_DEF(doom),
 		ACMD_DEF(doommap),
 		ACMD_DEF(raise),
 		ACMD_DEF(raisemap),
-		ACMD_DEFR(kick,ATCMD_NOAUTOTRADE), // + right click menu for GM "(name) force to quit"
+		ACMD_DEFR(kick, ATCMD_NOAUTOTRADE),	 // + right click menu for GM "(name) force to quit"
 		ACMD_DEF(kickall),
 		ACMD_DEF(allskill),
 		ACMD_DEF(questskill),
@@ -10929,10 +11005,10 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(agitend),
 		ACMD_DEF(mapexit),
 		ACMD_DEF(idsearch),
-		ACMD_DEF(broadcast), // + /b and /nb
-		ACMD_DEF(localbroadcast), // + /lb and /nlb
+		ACMD_DEF(broadcast),	   // + /b and /nb
+		ACMD_DEF(localbroadcast),  // + /lb and /nlb
 		ACMD_DEF(recallall),
-		ACMD_DEFR(reload,ATCMD_NOSCRIPT),
+		ACMD_DEFR(reload, ATCMD_NOSCRIPT),
 		ACMD_DEF2("reloaditemdb", reload),
 		ACMD_DEF2("reloadmobdb", reload),
 		ACMD_DEF2("reloadskilldb", reload),
@@ -10945,9 +11021,9 @@ void atcommand_basecommands(void) {
 		ACMD_DEF2("reloadquestdb", reload),
 		ACMD_DEF2("reloadmsgconf", reload),
 		ACMD_DEF2("reloadinstancedb", reload),
-		ACMD_DEF2("reloadachievementdb",reload),
-		ACMD_DEF2("reloadattendancedb",reload),
-		ACMD_DEF2("reloadbarterdb",reload),
+		ACMD_DEF2("reloadachievementdb", reload),
+		ACMD_DEF2("reloadattendancedb", reload),
+		ACMD_DEF2("reloadbarterdb", reload),
 		ACMD_DEF(partysharelvl),
 		ACMD_DEF(mapinfo),
 		ACMD_DEF(dye),
@@ -11045,6 +11121,7 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(rates),
 		ACMD_DEF(iteminfo),
 		ACMD_DEF(whodrops),
+		ACMD_DEF(cwhodrops),
 		ACMD_DEF(whereis),
 		ACMD_DEF(mapflag),
 		ACMD_DEF(me),
@@ -11112,7 +11189,7 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(cart),
 		ACMD_DEF(mount2),
 		ACMD_DEF(join),
-		ACMD_DEFR(channel,ATCMD_NOSCRIPT),
+		ACMD_DEFR(channel, ATCMD_NOSCRIPT),
 		ACMD_DEF(fontcolor),
 		ACMD_DEF(langtype),
 #ifdef VIP_ENABLE
@@ -11127,19 +11204,19 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(adopt),
 		ACMD_DEF(agitstart3),
 		ACMD_DEF(agitend3),
-		ACMD_DEFR(limitedsale, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
-		ACMD_DEFR(changedress, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
-		ACMD_DEFR(camerainfo, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
+		ACMD_DEFR(limitedsale, ATCMD_NOCONSOLE | ATCMD_NOAUTOTRADE),
+		ACMD_DEFR(changedress, ATCMD_NOCONSOLE | ATCMD_NOAUTOTRADE),
+		ACMD_DEFR(camerainfo, ATCMD_NOCONSOLE | ATCMD_NOAUTOTRADE),
 		ACMD_DEFR(resurrect, ATCMD_NOCONSOLE),
 		ACMD_DEF2("setquest", quest),
 		ACMD_DEF2("erasequest", quest),
 		ACMD_DEF2("completequest", quest),
 		ACMD_DEF2("checkquest", quest),
 		ACMD_DEF(refineui),
-		ACMD_DEFR(stylist, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
+		ACMD_DEFR(stylist, ATCMD_NOCONSOLE | ATCMD_NOAUTOTRADE),
 		ACMD_DEF(addfame),
-		ACMD_DEFR(enchantgradeui, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
-		ACMD_DEFR(roulette, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
+		ACMD_DEFR(enchantgradeui, ATCMD_NOCONSOLE | ATCMD_NOAUTOTRADE),
+		ACMD_DEFR(roulette, ATCMD_NOCONSOLE | ATCMD_NOAUTOTRADE),
 	};
 	AtCommandInfo* atcommand;
 	int i;
