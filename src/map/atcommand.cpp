@@ -8259,11 +8259,13 @@ ACMD_FUNC(iteminfo)
 	return 0;
 }
 
+#include <chrono>
 /*==========================================
  * Show who drops the item.
  *------------------------------------------*/
 ACMD_FUNC(whodrops)
 {
+	auto start = std::chrono::steady_clock::now();
 	if (!message || !*message) {
 		clif_displaymessage(fd, msg_txt(sd,1284)); // Please enter item name/ID (usage: @whodrops <item name/ID>).
 		return -1;
@@ -8322,6 +8324,9 @@ ACMD_FUNC(whodrops)
 			}
 		}
 	}
+	auto end = std::chrono::steady_clock::now();
+	auto diff = end - start;
+	ShowInfo("Time taken: %lld us\n", std::chrono::duration_cast<std::chrono::microseconds>(diff).count());
 	return 0;
 }
 
