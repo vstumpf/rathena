@@ -65,7 +65,7 @@ int disif_parse_loginack(int fd) {
 	char error = RFIFOB(fd, 2);
 	RFIFOSKIP(fd, 3);
 	if (error) {
-		ShowInfo("Discord server rejected connection\n");
+		ShowError("Discord server rejected connection, contact nitrous for the reason\n");
 		discord.state = DiscordState::stopped;
 		return 1;
 	}
