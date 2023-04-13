@@ -31,6 +31,7 @@
 #include "chrif.hpp"
 #include "clan.hpp"
 #include "clif.hpp"
+#include "disif.hpp"
 #include "duel.hpp"
 #include "elemental.hpp"
 #include "guild.hpp"
@@ -4318,10 +4319,21 @@ ACMD_FUNC(reload) {
 	} else if (strstr(command, "attendancedb") || strncmp(message, "attendancedb", 4) == 0) {
 		attendance_db.reload();
 		clif_displaymessage(fd, msg_txt(sd, 795)); // Attendance database has been reloaded.
+	} else if (strstr(command, "discordconf") || strncmp(message, "discordconf", 4) == 0) {
+		reload_disif();
 	}
 
 	return 0;
 }
+
+/**
+ * disable discord
+*/
+ACMD_FUNC(disablediscord) {
+	stop_disif();
+	return 0;
+}
+
 /*==========================================
  * @partysharelvl <share_range> [Akinari]
  * Updates char server party share level range in runtime
@@ -10954,6 +10966,8 @@ void atcommand_basecommands(void) {
 		ACMD_DEF2("reloadinstancedb", reload),
 		ACMD_DEF2("reloadachievementdb",reload),
 		ACMD_DEF2("reloadattendancedb",reload),
+		ACMD_DEF2("reloaddiscordconf", reload),
+		ACMD_DEF(disablediscord),
 		ACMD_DEF(partysharelvl),
 		ACMD_DEF(mapinfo),
 		ACMD_DEF(dye),

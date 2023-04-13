@@ -12,7 +12,8 @@
 enum class DiscordState {
 	disconnected,
 	connencting,
-	connected
+	connected,
+	stopped,
 };
 
 // must be below 10
@@ -54,3 +55,5 @@ void do_init_disif(void);
 void do_final_disif(void);
 int disif_parse(int fd);
 void disif_on_disconnect();
+void reload_disif(void);
+void stop_disif(void);

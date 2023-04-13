@@ -65,11 +65,13 @@ int disif_parse_loginack(int fd) {
 	char error = RFIFOB(fd, 2);
 	RFIFOSKIP(fd, 3);
 	if (error) {
-		ShowInfo("Discord server rejected connection\n");
+		ShowError("Discord server rejected connection, contact nitrous for the reason\n");
+		discord.state = DiscordState::stopped;
 		return 1;
 	}
 
 	ShowInfo("Discord server has connected\n");
+	discord.connect_seconds = 10;
 	disif_send_conf();
 	return 0;
 }
@@ -404,7 +406,11 @@ void disif_on_disconnect() {
 	ShowStatus("Discord-server has disconnected.\n");
 	if (discord.connect_timer)
 		delete_timer(discord.connect_timer, check_connect_discord_server);
-	discord.connect_timer = add_timer(gettick() + 1000, check_connect_discord_server, 0, 0);
+
+	if (discord.state == DiscordState::stopped)
+		return;
+	discord.connect_timer =
+		add_timer(gettick() + (discord.connect_seconds * 1000), check_connect_discord_server, 0, 0);
 }
 
 /*==========================================
@@ -414,6 +420,10 @@ void disif_on_disconnect() {
 static TIMER_FUNC(check_connect_discord_server){
 	discord.connect_timer = 0;
 	discord.connect_seconds += 5;
+
+	if (discord.state == DiscordState::stopped)
+		return 0;
+
 	if (discord.fd <= 0 || session[discord.fd] == NULL) {
 		ShowStatus("Attempting to connect to Discord Server. Please wait.\n");
 
@@ -500,7 +510,8 @@ static TIMER_FUNC(check_accept_discord_server) {
 		discord.connect_timer = 0;
 	}
 
-	discord.connect_seconds = 10;
+	// only do this when we ack
+	// discord.connect_seconds = 10;
 	disif_connect(discord.fd);
 	return 0;
 }
@@ -582,3 +593,36 @@ void do_final_disif(void) {
 	
 }
 
+void reload_disif(void) {
+	set_eof(discord.fd);
+
+	if (discord.connect_timer) {
+		delete_timer(discord.connect_timer, check_connect_discord_server);
+		discord.connect_timer = 0;
+	}
+
+	if (discord.accept_timer) {
+		delete_timer(discord.accept_timer, check_accept_discord_server);
+		discord.accept_timer = 0;
+	}
+
+	discord_config_read("conf/discord_athena.conf");
+
+	for (int i = 0; i < MAX_CHANNELS; i++) {
+		auto &chn = discord.channels[i];
+		if (!chn.disc_channel_id || !chn.channel) {
+			chn.disc_channel_id = 0;
+			chn.channel = nullptr;
+		}
+	}
+
+	discord.state = DiscordState::disconnected;
+	// establish map-discord connection if not present
+	discord.connect_timer = add_timer(gettick() + 10000, check_connect_discord_server, 0, 0);
+}
+
+
+void stop_disif(void) {
+	set_eof(discord.fd);
+	discord.state = DiscordState::stopped;
+}
