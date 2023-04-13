@@ -71,6 +71,7 @@ int disif_parse_loginack(int fd) {
 	}
 
 	ShowInfo("Discord server has connected\n");
+	discord.connect_seconds = 10;
 	disif_send_conf();
 	return 0;
 }
@@ -408,7 +409,8 @@ void disif_on_disconnect() {
 
 	if (discord.state == DiscordState::stopped)
 		return;
-	discord.connect_timer = add_timer(gettick() + 1000, check_connect_discord_server, 0, 0);
+	discord.connect_timer =
+		add_timer(gettick() + (discord.connect_seconds * 1000), check_connect_discord_server, 0, 0);
 }
 
 /*==========================================
@@ -418,6 +420,10 @@ void disif_on_disconnect() {
 static TIMER_FUNC(check_connect_discord_server){
 	discord.connect_timer = 0;
 	discord.connect_seconds += 5;
+
+	if (discord.state == DiscordState::stopped)
+		return 0;
+
 	if (discord.fd <= 0 || session[discord.fd] == NULL) {
 		ShowStatus("Attempting to connect to Discord Server. Please wait.\n");
 
@@ -504,7 +510,8 @@ static TIMER_FUNC(check_accept_discord_server) {
 		discord.connect_timer = 0;
 	}
 
-	discord.connect_seconds = 10;
+	// only do this when we ack
+	// discord.connect_seconds = 10;
 	disif_connect(discord.fd);
 	return 0;
 }
