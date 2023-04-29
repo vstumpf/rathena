@@ -367,6 +367,11 @@ void disif_setport(uint16 port) {
 	discord.port = port;
 }
 
+void disif_setenabled(const char *opt) {
+	if (!config_switch(opt))
+		discord.state = DiscordState::stopped;
+}
+
 int disif_setdiscchannel(const char * w1, const char * w2) {
 	w1 = w1 + strlen("discord_channel");
 	int n = strtoul(w1, nullptr, 10);
@@ -570,6 +575,8 @@ int discord_config_read(const char *cfgName)
 			disif_setrochannel(w1, w2);
 		else if (strcmpi(w1, "import") == 0)
 			discord_config_read(w2);
+		else if (strcmpi(w1, "enable") == 0)
+			disif_setenabled(w2);
 		else
 			ShowWarning("Unknown setting '%s' in file %s\n", w1, cfgName);
 	}
