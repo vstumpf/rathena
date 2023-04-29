@@ -484,11 +484,19 @@ static TIMER_FUNC(check_accept_discord_server) {
 		discord.accept_timer = add_timer(gettick() + 1000, check_accept_discord_server, 0, 0);
 		return 0;
 	}
+#ifdef WIN32
+	int err = 0;
+	int err_len = sizeof(err);
+	if (getsockopt(discord.fd, SOL_SOCKET, SO_ERROR, (char *)&err, &err_len)) {
+		ShowError("getsockopt failed!?\n");
+	}
+#else
 	int err = 0;
 	socklen_t err_len = sizeof(err);
 	if (getsockopt(discord.fd, SOL_SOCKET, SO_ERROR, &err, &err_len)) {
 		ShowError("getsockopt failed!?\n");
 	}
+#endif
 	if (err) {
 		ShowError("Discord connect failed, retrying in %d seconds\n", discord.connect_seconds);
 		discord.fd = 0;
