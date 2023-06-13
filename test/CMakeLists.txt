@@ -7,6 +7,11 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 if(WIN32)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    # let's also hide the gtest targets from the IDE
+    set_target_properties(gtest PROPERTIES FOLDER extern)
+    set_target_properties(gtest_main PROPERTIES FOLDER extern)
+    set_target_properties(gmock PROPERTIES FOLDER extern)
+    set_target_properties(gmock_main PROPERTIES FOLDER extern)
 endif()
 FetchContent_MakeAvailable(googletest)
 
