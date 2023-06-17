@@ -329,6 +329,8 @@ void usercheck(void)
 }
 
 int Core::start( int argc, char **argv ){
+	setConsoleLogFile("./log/unknown.log");
+
 	if( this->get_status() != e_core_status::NOT_STARTED) {
 		ShowFatalError( "Core was already started and cannot be started again!\n" );
 		return EXIT_FAILURE;
@@ -417,6 +419,7 @@ int Core::start( int argc, char **argv ){
 
 	this->set_status( e_core_status::STOPPED );
 
+	closeConsoleLogFile();
 	return EXIT_SUCCESS;
 }
 

@@ -614,7 +614,7 @@ bool login_config_read(const char* cfgName, bool normal) {
 		else if (strcmpi(w1, "console_msg_log") == 0)
 			console_msg_log = atoi(w2);
 		else if  (strcmpi(w1, "console_log_filepath") == 0)
-			safestrncpy(console_log_filepath, w2, sizeof(console_log_filepath));
+			setConsoleLogFile(w2);
 		else if(!strcmpi(w1, "log_login"))
 			login_config.log_login = (bool)config_switch(w2);
 		else if(!strcmpi(w1, "new_account"))
@@ -832,7 +832,7 @@ void LoginServer::handle_shutdown(){
 
 bool LoginServer::initialize( int argc, char* argv[] ){
 	// Init default value
-	safestrncpy(console_log_filepath, "./log/login-msg_log.log", sizeof(console_log_filepath));
+	setConsoleLogFile("./log/login-msg_log.log");
 
 	// initialize engine
 	accounts = account_db_sql();

@@ -70,7 +70,6 @@
 extern int stdout_with_ansisequence; //If the color ansi sequences are to be used. [flaviojs]
 extern int msg_silent; //Specifies how silent the console is. [Skotlex]
 extern int console_msg_log; //Specifies what error messages to log. [Ind]
-extern char console_log_filepath[32]; ///< Filepath to save console_msg_log. [Cydh]
 extern char timestamp_format[20]; //For displaying Timestamps [Skotlex]
 
 enum msg_type {
@@ -97,5 +96,8 @@ extern void ShowDebug(const char *, ...);
 extern void ShowError(const char *, ...);
 extern void ShowFatalError(const char *, ...);
 extern void ShowConfigWarning(config_setting_t *config, const char *string, ...);
+
+void setConsoleLogFile(const char *filepath);
+void closeConsoleLogFile();
 
 #endif /* SHOWMSG_HPP */

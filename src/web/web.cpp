@@ -145,7 +145,7 @@ bool web_config_read(const char* cfgName, bool normal) {
 		else if (!strcmpi(w1, "console_msg_log"))
 			console_msg_log = atoi(w2);
 		else if (!strcmpi(w1, "console_log_filepath"))
-			safestrncpy(console_log_filepath, w2, sizeof(console_log_filepath));
+			setConsoleLogFile("./log/web-msg_log.log");
 		else if (!strcmpi(w1, "print_req_res"))
 			web_config.print_req_res = config_switch(w2);
 		else if (!strcmpi(w1, "import"))
@@ -431,7 +431,7 @@ bool WebServer::initialize( int argc, char* argv[] ){
 #else
 	INTER_CONF_NAME="conf/inter_athena.conf";
 
-	safestrncpy(console_log_filepath, "./log/web-msg_log.log", sizeof(console_log_filepath));
+	setConsoleLogFile("./log/web-msg_log.log");
 
 	// read web-server configuration
 	web_set_defaults();

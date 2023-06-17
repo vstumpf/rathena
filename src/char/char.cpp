@@ -2957,7 +2957,7 @@ bool char_config_read(const char* cfgName, bool normal){
 		} else if (strcmpi(w1, "console_msg_log") == 0) {
 			console_msg_log = atoi(w2);
 		} else if  (strcmpi(w1, "console_log_filepath") == 0) {
-			safestrncpy(console_log_filepath, w2, sizeof(console_log_filepath));
+			setConsoleLogFile(w2);
 		} else if(strcmpi(w1,"stdout_with_ansisequence")==0){
 			stdout_with_ansisequence = config_switch(w2);
 		} else if (strcmpi(w1, "char_maintenance") == 0) {
@@ -3164,7 +3164,7 @@ bool CharacterServer::initialize( int argc, char *argv[] ){
 	LAN_CONF_NAME =    "conf/subnet_athena.conf";
 	SQL_CONF_NAME =    "conf/inter_athena.conf";
 	MSG_CONF_NAME_EN = "conf/msg_conf/char_msg.conf";
-	safestrncpy(console_log_filepath, "./log/char-msg_log.log", sizeof(console_log_filepath));
+	setConsoleLogFile("./log/char-msg_log.log");
 
 	cli_get_options(argc,argv);
 
