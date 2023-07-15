@@ -193,4 +193,9 @@ void send_shortlist_add_fd(int fd);
 void send_shortlist_do_sends();
 #endif
 
+// Only for windows
+#ifdef WIN32
+SOCKET fd2sock_ext(int fd);
+#endif
+
 #endif /* SOCKET_HPP */

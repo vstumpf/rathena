@@ -448,6 +448,16 @@ void disif_on_disconnect() {
 		add_timer(gettick() + (discord.connect_seconds * 1000), check_connect_discord_server, 0, 0);
 }
 
+#ifdef WIN32
+#define sErrno WSAGetLastError()
+#define S_EINTR WSAEINTR
+#define sFD_SET(fd, set) FD_SET(fd2sock_ext(fd), set)
+#else
+#define sErrno errno
+#define S_EINTR EINTR
+#define sFD_SET(fd, set) FD_SET(fd, set)
+#endif
+
 /*==========================================
  * timerFunction
   * Chk the connection to discord server, (if it down)
@@ -499,7 +509,7 @@ static TIMER_FUNC(check_accept_discord_server) {
 
 	fd_set dfd;
 	FD_ZERO(&dfd);
-	FD_SET(discord.fd, &dfd);
+	sFD_SET(discord.fd, &dfd);
 
 	struct timeval tv;
 	tv.tv_sec = 0;
@@ -507,7 +517,7 @@ static TIMER_FUNC(check_accept_discord_server) {
 
 	auto ret = select(discord.fd + 1, nullptr, &dfd, nullptr, &tv);
 	if (ret < 0) {
-		ShowError("Discord select failed, retrying in %d seconds\n", discord.connect_seconds);
+		ShowError("Discord select failed [%d], retrying in %d seconds\n", sErrno, discord.connect_seconds);
 		discord.fd = 0;
 		discord.state = DiscordState::disconnected;
 		if (!discord.connect_timer) {
@@ -522,7 +532,7 @@ static TIMER_FUNC(check_accept_discord_server) {
 #ifdef WIN32
 	int err = 0;
 	int err_len = sizeof(err);
-	if (getsockopt(discord.fd, SOL_SOCKET, SO_ERROR, (char *)&err, &err_len)) {
+	if (getsockopt(fd2sock_ext(discord.fd), SOL_SOCKET, SO_ERROR, (char *)&err, &err_len)) {
 		ShowError("getsockopt failed!?\n");
 	}
 #else

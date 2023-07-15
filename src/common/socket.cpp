@@ -96,6 +96,9 @@ int sock2fd(SOCKET s)
 	return fd;
 }
 
+SOCKET fd2sock_ext(int fd) {
+	return fd2sock(fd);
+}
 
 /// Inserts the socket into the global array of sockets.
 /// Returns a new fd associated with the socket.
