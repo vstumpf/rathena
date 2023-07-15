@@ -168,6 +168,23 @@ int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 	return 0;
 }
 
+int disif_send_request_to_disc(char * name, char * message) {
+	if (!name || !message || discord.fd == -1)
+		return 0;
+
+	char output[CHAT_SIZE_MAX + NAME_LENGTH + 3];
+	auto msg_len = safesnprintf(output, sizeof(output), "%s : %s", name, message);
+	auto len = msg_len + 12;
+
+	WFIFOHEAD(discord.fd, len);
+	WFIFOW(discord.fd, 0) = 0xD04;
+	WFIFOW(discord.fd, 2) = len;
+	WFIFOQ(discord.fd, 4) = discord.request_channel_id;
+	safestrncpy(WFIFOCP(discord.fd, 12), output, msg_len);
+	WFIFOSET(discord.fd, len);
+	return 0;
+}
+
 
 /**
  * Send the channels to listen to
@@ -179,6 +196,7 @@ int disif_send_conf() {
 	
 	uint16 count = 0;
 
+	WFIFOHEAD(discord.fd, 6 + (MAX_CHANNELS + 1) * 8);
 	WFIFOW(discord.fd, 0) = 0xD05;
 	for (int i = 0; i < MAX_CHANNELS; i++) {
 		auto &chn = discord.channels[i];
@@ -187,7 +205,12 @@ int disif_send_conf() {
 			count++;
 		}
 	}
-	
+
+	if (discord.request_channel_id) {
+		WFIFOQ(discord.fd, 6 + count * 8) = discord.request_channel_id;
+		count++;
+	}
+
 	WFIFOW(discord.fd, 2) = 6 + count * 8;
 	WFIFOW(discord.fd, 4) = count;
 	WFIFOSET(discord.fd, 6 + count * 8);
@@ -404,6 +427,13 @@ int disif_setrochannel(const char * w1, const char * w2) {
 	return 1;
 }
 
+int disif_setrequestchannel(const char * w2) {
+	uint64 id = strtoull(w2, nullptr, 10);
+	discord.request_channel_id = id;
+	ShowInfo("Set request channel to id %llu\n", id);
+	return 1;
+}
+
 /**
 * Called when the connection to discord Server is disconnected.
 */
@@ -577,6 +607,8 @@ int discord_config_read(const char *cfgName)
 			discord_config_read(w2);
 		else if (strcmpi(w1, "enable") == 0)
 			disif_setenabled(w2);
+		else if (strcmpi(w1, "discord_request_channel") == 0)
+			disif_setrequestchannel(w2);
 		else
 			ShowWarning("Unknown setting '%s' in file %s\n", w1, cfgName);
 	}

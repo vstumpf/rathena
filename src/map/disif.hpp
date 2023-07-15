@@ -38,17 +38,20 @@ struct mmo_dis_server {
 	int accept_timer;
 
 	struct discord_channel channels[MAX_CHANNELS];
+	uint64 request_channel_id;
 };
 
 
 int disif_parse_loginack(int fd);
 int disif_parse_message_from_disc(int fd);
 int disif_send_message_to_disc(struct Channel *channel, char *msg);
+int disif_send_request_to_disc(char *name, char *msg);
 
 int disif_send_conf();
 
 int disif_setdiscchannel(const char * w1, const char * w2);
 int disif_setrochannel(const char * w1, const char * w2);
+int disif_setrequestchannel(const char * w2);
 
 void disif_connectack(int fd, uint8 errCode);
 void do_init_disif(void);
