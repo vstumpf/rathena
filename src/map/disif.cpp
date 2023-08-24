@@ -157,15 +157,7 @@ int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 		msg_len = CHAT_SIZE_MAX - 12;
 	}
 
-	len = msg_len + 12;
-
-	WFIFOHEAD(discord.fd, len);
-	WFIFOW(discord.fd, 0) = 0xD04;
-	WFIFOW(discord.fd, 2) = len;
-	WFIFOQ(discord.fd, 4) = channel->discord_id;
-	safestrncpy(WFIFOCP(discord.fd, 12), msg, msg_len);
-	WFIFOSET(discord.fd, len);
-	return 0;
+	return disif_send_message_tochan(channel->discord_id, msg, msg_len);
 }
 
 int disif_send_request_to_disc(char * name, char * message) {
@@ -174,14 +166,20 @@ int disif_send_request_to_disc(char * name, char * message) {
 
 	char output[CHAT_SIZE_MAX + NAME_LENGTH + 3];
 	auto msg_len = safesnprintf(output, sizeof(output), "%s : %s", name, message);
-	auto len = msg_len + 12;
+	return disif_send_message_tochan(discord.request_channel_id, output, msg_len);
+}
 
-	WFIFOHEAD(discord.fd, len);
+
+int disif_send_message_tochan(uint64 cid, const char *msg, uint16 len) {
+	if (discord.fd == -1)
+		return 0;
+
+	WFIFOHEAD(discord.fd, len + 12);
 	WFIFOW(discord.fd, 0) = 0xD04;
-	WFIFOW(discord.fd, 2) = len;
-	WFIFOQ(discord.fd, 4) = discord.request_channel_id;
-	safestrncpy(WFIFOCP(discord.fd, 12), output, msg_len);
-	WFIFOSET(discord.fd, len);
+	WFIFOW(discord.fd, 2) = len + 12;
+	WFIFOQ(discord.fd, 4) = cid;
+	safestrncpy(WFIFOCP(discord.fd, 12), msg, len);
+	WFIFOSET(discord.fd, len + 12);
 	return 0;
 }
 
