@@ -9152,6 +9152,7 @@ ACMD_FUNC(request)
 	intif_wis_message_to_gm(sd->status.name, PC_PERM_RECEIVE_REQUESTS, atcmd_output);
 	clif_messagecolor(&sd->bl, color_table[COLOR_LIGHT_GREEN], atcmd_output, false, SELF);
 	clif_displaymessage(sd->fd,msg_txt(sd,279));	// @request sent.
+	disif_send_request_to_disc(*sd, message);
 	return 0;
 }
 

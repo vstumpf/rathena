@@ -17,6 +17,7 @@
 
 #include "clif.hpp"
 #include "channel.hpp"
+#include "pc.hpp"
 
 struct mmo_dis_server discord{};
 
@@ -25,7 +26,7 @@ static TIMER_FUNC(check_accept_discord_server);
 
 // Received packet Lengths from discord-server
 int dis_recv_packet_length[] = {
-	0, 43, 3, -1, -1, -1, -1, 2, 2, 0, 0, 0, 0, 0, 0, 0, //0D00
+	0, 43, 3, -1, -1, -1, -1, 2, 2, -1, -1, 10, 4, 0, 0, 0, //0D00
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D10
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //0D20
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  //0D30
@@ -149,7 +150,7 @@ int disif_parse_message_from_disc(int fd) {
 int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 	unsigned short msg_len = 0, len = 0;
 
-	if (!channel || !msg || discord.fd == -1)
+	if (!channel || !msg || discord.fd == -1 || discord.state != DiscordState::connected)
 		return 0;
 	msg_len = (unsigned short)(strlen(msg) + 1);
 
@@ -160,18 +161,57 @@ int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 	return disif_send_message_tochan(channel->discord_id, msg, msg_len);
 }
 
-int disif_send_request_to_disc(char * name, char * message) {
-	if (!name || !message || discord.fd == -1)
+/**
+ * Send a message to discord to the request category/channel from a player
+ * Either 0D04 packet or 0D09
+ */
+int disif_send_request_to_disc(const map_session_data& sd, const char * message) {
+	if (!message || discord.fd == -1 || discord.state != DiscordState::connected)
 		return 0;
 
 	char output[CHAT_SIZE_MAX + NAME_LENGTH + 3];
-	auto msg_len = safesnprintf(output, sizeof(output), "%s : %s", name, message);
-	return disif_send_message_tochan(discord.request_channel_id, output, msg_len);
+	auto msg_len = safesnprintf(output, sizeof(output), "%s : %s", sd.status.name, message) + 1;
+	if (!discord.request_category_id) {
+		// we're not premium, use normal message
+		return disif_send_message_tochan(discord.request_channel_id, output, msg_len);
+	}
+
+	WFIFOHEAD(discord.fd, 8 + msg_len);
+	WFIFOW(discord.fd, 0) = 0xD09;
+	WFIFOW(discord.fd, 2) = 8 + msg_len;
+	WFIFOL(discord.fd, 4) = sd.status.account_id;
+	safestrncpy(WFIFOCP(discord.fd, 8), output, msg_len);
+	WFIFOSET(discord.fd, 8 + msg_len);
+	return 1;
 }
 
+/**
+ * Send a whisper to the user from a discord channel
+ * 0d0a <packet len>.W <account id>.L <message>.?B
+*/
+int disif_parse_send_message_toplayer(int fd) {
+	if (RFIFOREST(fd) < 4)
+		return 0;
+	
+	int len = RFIFOW(fd, 2);
+
+	if (RFIFOREST(fd) < len)
+		return 0;
+
+	int accid = RFIFOL(fd, 4);
+	char *msg = RFIFOCP(fd, 8);
+
+	map_session_data *sd = map_id2sd(accid);
+	if (!sd) {
+		return 1;
+	}
+
+	clif_wis_message(sd, "@discord", msg, strlen(msg) + 1, 99);
+	return 1;
+}
 
 int disif_send_message_tochan(uint64 cid, const char *msg, uint16 len) {
-	if (discord.fd == -1)
+	if (discord.fd == -1 || discord.state != DiscordState::connected)
 		return 0;
 
 	WFIFOHEAD(discord.fd, len + 12);
@@ -189,7 +229,7 @@ int disif_send_message_tochan(uint64 cid, const char *msg, uint16 len) {
  * 0D05 <packet len>.W <count>.W {<channel id>.Q}*count
 */
 int disif_send_conf() {
-	if (discord.fd == -1)
+	if (discord.fd == -1 || discord.state != DiscordState::connected)
 		return 0;
 	
 	uint16 count = 0;
@@ -249,6 +289,68 @@ int disif_parse_conf_ack(int fd) {
 			continue;
 		chn.channel->discord_id = chn.disc_channel_id;
 	}
+
+	if (discord.request_category_id) {
+		disif_send_request_category(discord.request_category_id);
+	}
+	return 1;
+}
+
+/** 
+ * Send the request category to discord
+ * 0D0B <packet len>.W <category id>.Q
+*/
+int disif_send_request_category(uint64 cid) {
+	if (discord.fd == -1 || discord.state != DiscordState::connected)
+		return 0;
+
+	WFIFOHEAD(discord.fd, 10);
+	WFIFOW(discord.fd, 0) = 0xD0B;
+	WFIFOQ(discord.fd, 2) = cid;
+	WFIFOSET(discord.fd, 10);
+	return 1;
+}
+
+/**
+ * Parse the request category ack
+ *	0 - ok
+ *	1 - chn doesn't exist
+ *	2 - chn not in guild
+ *	3 - chn not a category
+ *	4 - we don't have manage channel permissions
+ *	5 - you aint premium
+
+ * 0D0C <error code>.W
+*/
+int disif_parse_request_category_ack(int fd) {
+	if (RFIFOREST(fd) < 4)
+		return 0;
+	uint16 err = RFIFOW(fd, 2);
+	switch(err) {
+	case 0:
+		ShowInfo("Discord request category set\n");
+		return 1;
+	case 1:
+		ShowWarning("Discord request category does not exist\n");
+		break;
+	case 2:
+		ShowWarning("Discord request category not in guild\n");
+		break;
+	case 3:	
+		ShowWarning("Discord request category is not a category\n");
+		break;
+	case 4:
+		ShowWarning("Discord request category we don't have manage channel permissions\n");
+		break;
+	case 5:
+		ShowWarning("Discord request category is a premium feature\n");
+		break;
+	default:
+		ShowWarning("Unknown Error for Discord Request Category, please report %hu\n", err);
+		break;
+	}
+	// if we got here, there must have been an error, so unset it
+	discord.request_category_id = 0;
 	return 1;
 }
 
@@ -359,6 +461,8 @@ int disif_parse(int fd) {
 		case 0x0d03: next = disif_parse_message_from_disc(fd); break;
 		case 0x0d06: next = disif_parse_conf_ack(fd); break;
 		case 0x0d08: next = disif_parse_keepaliveack(fd); break;
+		case 0x0d0a: next = disif_parse_send_message_toplayer(fd); break;
+		case 0x0d0c: next = disif_parse_request_category_ack(fd); break;
 		default:
 			ShowError("Unknown packet 0x%04x from discord server, disconnecting.\n", RFIFOW(fd, 0));
 			set_eof(fd);
@@ -430,6 +534,24 @@ int disif_setrequestchannel(const char * w2) {
 	discord.request_channel_id = id;
 	ShowInfo("Set request channel to id %llu\n", id);
 	return 1;
+}
+
+int disif_setrequestcategory(const char * w2) {
+	uint64 id = strtoull(w2, nullptr, 10);
+	discord.request_category_id = id;
+	ShowInfo("Set request category to id %llu\n", id);
+	return 1;
+}
+
+/**
+ * A player PMed @discord, send the message to discord request category
+ * Premium only
+*/
+int disif_discord_wis(const map_session_data &sd, const char *target, const char *msg) {
+	if (!msg || !*msg || !discord.request_category_id)
+		return 0;
+
+	return disif_send_request_to_disc(sd, msg);
 }
 
 /**
@@ -617,6 +739,8 @@ int discord_config_read(const char *cfgName)
 			disif_setenabled(w2);
 		else if (strcmpi(w1, "discord_request_channel") == 0)
 			disif_setrequestchannel(w2);
+		else if (strcmpi(w1, "discord_request_category") == 0)
+			disif_setrequestcategory(w2);
 		else
 			ShowWarning("Unknown setting '%s' in file %s\n", w1, cfgName);
 	}

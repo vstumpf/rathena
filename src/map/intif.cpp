@@ -1379,7 +1379,6 @@ int mapif_parse_WisToGM(int fd)
 	safestrncpy(message, RFIFOCP(fd,8+NAME_LENGTH), mes_len+1);
 	// information is sent to all online GM
 	map_foreachpc(mapif_parse_WisToGM_sub, permission, Wisp_name, message, mes_len);
-	disif_send_request_to_disc(Wisp_name, message);
 	aFree(message);
 	return 1;
 }

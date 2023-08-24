@@ -34,6 +34,7 @@
 #include "chrif.hpp"
 #include "clan.hpp"
 #include "clif.hpp"
+#include "disif.hpp"
 #include "elemental.hpp"
 #include "guild.hpp"
 #include "homunculus.hpp"
@@ -11898,6 +11899,10 @@ void clif_parse_WisMessage(int fd, struct map_session_data* sd)
 			}
 			return;
 		}
+	} else if (strcmpi(target, "@discord") == 0) {
+		disif_discord_wis(*sd, target, message);
+		clif_wis_end(fd, 0);  // 0: success to send whisper
+		return;
 	}
 
 	// searching destination character
