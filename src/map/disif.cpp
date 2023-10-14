@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdarg>
 #include <ctime>
+#include <regex>
 
 #include "../common/cbasetypes.hpp"
 #include "../common/socket.hpp"
@@ -152,13 +153,16 @@ int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 
 	if (!channel || !msg || discord.fd == -1 || discord.state != DiscordState::connected)
 		return 0;
-	msg_len = (unsigned short)(strlen(msg) + 1);
+
+	auto newmsg = parse_item_link(msg);
+
+	msg_len = (unsigned short)(newmsg.length() + 1);
 
 	if (msg_len > CHAT_SIZE_MAX - 12) {
 		msg_len = CHAT_SIZE_MAX - 12;
 	}
 
-	return disif_send_message_tochan(channel->discord_id, msg, msg_len);
+	return disif_send_message_tochan(channel->discord_id, newmsg.c_str(), msg_len);
 }
 
 /**
@@ -384,6 +388,55 @@ int dis_check_length(int fd, int length)
 
 	return length;
 }
+constexpr char base62_dictionary[] = {
+	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+	'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+	'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+
+uint32 base62_decode(const std::string &msg) {
+	uint32 result = 0;
+	for (size_t i = 0; i < msg.length(); i++) {
+		for (size_t j = 0; j < 62; j++) {
+			if (msg[i] == base62_dictionary[j]) {
+				result = result * 62 + j;
+				break;
+			}
+		}
+	}
+	return result;
+}
+
+/**
+ * Parse an item link string
+ */
+std::string parse_item_link(const std::string &msg) {
+#if PACKETVER >= 20160113
+	const std::string start_tag = R"(<ITEML>)";
+	const std::string closing_tag = R"(</ITEML>)";
+#else  // PACKETVER >= 20151104
+	const std::string start_tag = "<ITEM>";
+	const std::string closing_tag = "</ITEM>";
+#endif
+
+	static std::regex item_regex(start_tag + R"!((\w{5})(\d)(\w+)[^<]*)!" + closing_tag);
+
+	std::smatch match;
+	std::string retstr = msg;
+	while (std::regex_search(retstr, match, item_regex)) {
+		auto itemdb = item_db.find(base62_decode(match[3].str()));
+		if (!itemdb) {
+			ShowError("Tried to parse itemlink for unknown item %s.\n", match[3].str().c_str());
+			return msg;
+		}
+
+		retstr = std::regex_replace(retstr, item_regex, "<" + itemdb->name + ">",
+									std::regex_constants::format_first_only);
+	}
+	return retstr;
+}
+
+/**
 
 /**
 * Entry point from discord server to map-server.
