@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #include "../config/core.hpp"
 #include "../common/core.hpp" // CORE_ST_LAST
 #include "../common/msg_conf.hpp"
@@ -59,8 +57,6 @@ int disif_setrochannel(const char * w1, const char * w2);
 int disif_setrequestchannel(const char * w2);
 
 int disif_discord_wis(const map_session_data &sd, const char *target, const char *msg);
-
-std::string parse_item_link(const std::string &msg);
 
 void do_init_disif(void);
 void do_final_disif(void);

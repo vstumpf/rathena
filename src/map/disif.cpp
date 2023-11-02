@@ -25,6 +25,8 @@ struct mmo_dis_server discord{};
 static TIMER_FUNC(check_connect_discord_server);
 static TIMER_FUNC(check_accept_discord_server);
 
+static std::string parse_item_link(const std::string &msg);
+
 // Received packet Lengths from discord-server
 int dis_recv_packet_length[] = {
 	0, 43, 3, -1, -1, -1, -1, 2, 2, -1, -1, 10, 4, 0, 0, 0, //0D00
@@ -157,10 +159,6 @@ int disif_send_message_to_disc(struct Channel *channel, char *msg) {
 	auto newmsg = parse_item_link(msg);
 
 	msg_len = (unsigned short)(newmsg.length() + 1);
-
-	if (msg_len > CHAT_SIZE_MAX - 12) {
-		msg_len = CHAT_SIZE_MAX - 12;
-	}
 
 	return disif_send_message_tochan(channel->discord_id, newmsg.c_str(), msg_len);
 }
@@ -388,7 +386,7 @@ int dis_check_length(int fd, int length)
 
 	return length;
 }
-constexpr char base62_dictionary[] = {
+const char base62_dictionary[] = {
 	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
 	'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
 	'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
@@ -410,7 +408,7 @@ uint32 base62_decode(const std::string &msg) {
 /**
  * Parse an item link string
  */
-std::string parse_item_link(const std::string &msg) {
+static std::string parse_item_link(const std::string &msg) {
 #if PACKETVER >= 20160113
 	const std::string start_tag = R"(<ITEML>)";
 	const std::string closing_tag = R"(</ITEML>)";
@@ -419,18 +417,18 @@ std::string parse_item_link(const std::string &msg) {
 	const std::string closing_tag = "</ITEM>";
 #endif
 
-	static std::regex item_regex(start_tag + R"!((\w{5})(\d)(\w+)[^<]*)!" + closing_tag);
+	static std::regex item_regex(start_tag + R"!(((\w{5})(\d)(\w+)[^<]*))!" + closing_tag);
 
 	std::smatch match;
 	std::string retstr = msg;
 	while (std::regex_search(retstr, match, item_regex)) {
-		auto itemdb = item_db.find(base62_decode(match[3].str()));
+		auto itemdb = item_db.find(base62_decode(match[4].str()));
 		if (!itemdb) {
-			ShowError("Tried to parse itemlink for unknown item %s.\n", match[3].str().c_str());
+			ShowError("Tried to parse itemlink for unknown item %s.\n", match[4].str().c_str());
 			return msg;
 		}
 
-		retstr = std::regex_replace(retstr, item_regex, "<" + itemdb->name + ">",
+		retstr = std::regex_replace(retstr, item_regex, "!<!<" + match[1].str() + ">!>![" + itemdb->name + "]",
 									std::regex_constants::format_first_only);
 	}
 	return retstr;
