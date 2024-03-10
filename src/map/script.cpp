@@ -41,6 +41,7 @@
 #include "clan.hpp"
 #include "clif.hpp"
 #include "date.hpp" // date type enum, date_get()
+#include "disif.hpp"
 #include "elemental.hpp"
 #include "guild.hpp"
 #include "homunculus.hpp"
@@ -26810,6 +26811,31 @@ BUILDIN_FUNC(getfamerank) {
 	return SCRIPT_CMD_SUCCESS;
 }
 
+BUILDIN_FUNC(sendtodiscord) {
+	const char *channel_id = script_getstr(st, 2);
+	const char *message = script_getstr(st, 3);
+
+	uint64 id = strtoull(channel_id, nullptr, 10);
+	if (id == 0) {
+		ShowError("buildin_sendtodiscord: Invalid channel id.\n");
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	uint16 len = strnlen(message, 2000);
+
+	if (len >= 2000) {
+		ShowError("buildin_sendtodiscord: Message is too long.\n");
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	if (disif_send_message_tochan(id, message, len)) {
+		ShowError("buildin_sendtodiscord: Failed to send message.\n");
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
 #include "../custom/script.inc"
 
 // declarations that were supposed to be exported from npc_chat.cpp
@@ -27561,6 +27587,7 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(addfame, "i?"),
 	BUILDIN_DEF(getfame, "?"),
 	BUILDIN_DEF(getfamerank, "?"),
+	BUILDIN_DEF(sendtodiscord, "ss"),
 #include "../custom/script_def.inc"
 
 	{NULL,NULL,NULL},
