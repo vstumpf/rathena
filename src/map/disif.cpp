@@ -656,7 +656,7 @@ static TIMER_FUNC(check_connect_discord_server){
 		discord.fd = make_connection(discord.ip, discord.port, false, 10, true);
 
 		if (discord.fd == -1) { // Attempt to connect later. [Skotlex]
-			ShowInfo("make_connection failed, will retry in %s seconds\n", discord.connect_seconds);
+			ShowInfo("make_connection failed, will retry in %d seconds\n", discord.connect_seconds);
 			discord.connect_timer = add_timer(gettick() + (discord.connect_seconds * 1000), check_connect_discord_server, 0, 0);
 			return 0;
 		}
