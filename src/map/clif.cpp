@@ -20935,6 +20935,8 @@ void clif_broadcast_obtain_special_item( const char *char_name, t_itemid nameid,
 #endif
 
 				clif_send( &p, p.PacketLength, nullptr, ALL_CLIENT );
+				std::string msg = "MyRO : " + std::string(name) + " has obtained " + itemdb_name(nameid) + " from " + itemdb_name(container) + ".";
+				disif_send_message_tochan(111738290203, msg.c_str(), msg.length() + 1);
 			}
 #endif
 			break;
@@ -20967,6 +20969,8 @@ void clif_broadcast_obtain_special_item( const char *char_name, t_itemid nameid,
 #endif
 
 				clif_send( &p, p.PacketLength, NULL, ALL_CLIENT );
+				std::string msg = "MyRO : " + std::string(name) + " has obtained " + itemdb_name(nameid) + " from " + std::string(p.monsterName) + ".";
+				disif_send_message_tochan(111738290203, msg.c_str(), msg.length() + 1);
 			}
 			break;
 	}
