@@ -24908,6 +24908,9 @@ BUILDIN_FUNC(channel_chat) {
 
 	safesnprintf(output, CHAT_SIZE_MAX, "%s %s", ch->alias, msg);
 	clif_channel_msg(ch,output,color);
+	if (ch->discord_id) {
+		disif_send_message_to_disc(ch, msg);
+	}
 	script_pushint(st,1);
 	return SCRIPT_CMD_SUCCESS;
 }

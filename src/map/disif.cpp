@@ -150,7 +150,7 @@ int disif_parse_message_from_disc(int fd) {
 * @param msg : message that was sent
 * 0D04 <packet len>.W <channel id>.Q <message>.?B
 */
-int disif_send_message_to_disc(struct Channel *channel, char *msg) {
+int disif_send_message_to_disc(struct Channel *channel, const char *msg) {
 	unsigned short msg_len = 0, len = 0;
 
 	if (!channel || !msg || discord.fd == -1 || discord.state != DiscordState::connected)

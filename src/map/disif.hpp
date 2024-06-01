@@ -45,7 +45,7 @@ struct mmo_dis_server {
 
 int disif_parse_loginack(int fd);
 int disif_parse_message_from_disc(int fd);
-int disif_send_message_to_disc(struct Channel *channel, char *msg);
+int disif_send_message_to_disc(struct Channel *channel, const char *msg);
 int disif_send_request_to_disc(const map_session_data &sd, const char *message);
 int disif_send_message_tochan(uint64 cid, const char *msg, uint16 len);
 
