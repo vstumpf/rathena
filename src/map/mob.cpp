@@ -26,6 +26,7 @@
 #include "achievement.hpp"
 #include "battle.hpp"
 #include "clif.hpp"
+#include "disif.hpp"
 #include "elemental.hpp"
 #include "guild.hpp"
 #include "homunculus.hpp"
@@ -2828,6 +2829,7 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type)
 				sprintf (message, msg_txt(NULL,541), mvp_sd->status.name, md->name, it->ename.c_str(), (float)drop_rate/100);
 				//MSG: "'%s' won %s's %s (chance: %0.02f%%)"
 				intif_broadcast(message,strlen(message)+1,BC_DEFAULT);
+				// disif_send_message_tochan(7183290182301818, message, strlen(message) + 1);
 			}
 			// Announce first, or else ditem will be freed. [Lance]
 			// By popular demand, use base drop rate for autoloot code. [Skotlex]
