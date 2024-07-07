@@ -8921,7 +8921,6 @@ int skill_castend_nodamage_id (struct block_list *src, struct block_list *bl, ui
 			break;
 
 		case BS_MAXIMIZE:
-		case NV_TRICKDEAD:
 		case CR_DEFENDER:
 		case ML_DEFENDER:
 		case CR_AUTOGUARD:
@@ -9170,11 +9169,6 @@ int skill_castend_nodamage_id (struct block_list *src, struct block_list *bl, ui
 					}
 				}
 			}
-			break;
-
-		case NV_FIRSTAID:
-			clif_skill_nodamage(src,bl,skill_id,5,1);
-			status_heal(bl,5,0,0);
 			break;
 
 		case AL_CURE:

@@ -3,6 +3,7 @@
 
 #include "skillrepository.hpp"
 #include "swordsman.hpp"
+#include "novice.hpp"
 
 #include <memory>
 
@@ -22,4 +23,5 @@ void SkillRepository::addSkill(e_skill skill_id, std::unique_ptr<Skill> skill) {
 
 void init_skill_repository() {
     init_swordsman_skills(skillRepository);
+    init_novice_skills(skillRepository);
 }

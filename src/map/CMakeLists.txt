@@ -44,6 +44,7 @@ set(MAP_SOURCES
 
 	"skills/skill.cpp"
 	"skills/skillrepository.cpp"
+	"skills/novice.cpp"
 	"skills/swordsman.cpp"
 )
 
