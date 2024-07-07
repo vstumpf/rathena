@@ -60,8 +60,25 @@ int WeaponSkill::castendDamageImpl(block_list *src, block_list *target, uint16 s
 
 int StatusSkill::castendNoDamageImpl(block_list *src, block_list *target, uint16 skill_lv, t_tick tick, int flag) const {
     enum sc_type type = skill_get_sc(skill_id_);
-    clif_skill_nodamage(src, target, skill_id_, skill_lv,
-                        sc_start(src, target, type, 100, skill_lv,
-                                 skill_get_time(skill_id_, skill_lv)));
+
+    int duration = skill_get_time(skill_id_, skill_lv);
+    duration = sc_start(src, target, type, 100, skill_lv, duration);
+    clif_skill_nodamage(src, target, skill_id_, skill_lv, duration);
+    return 0;
+}
+
+int ToggleSkill::castendNoDamageImpl(block_list *src, block_list *target, uint16 skill_lv, t_tick tick, int flag) const {
+    enum sc_type type = skill_get_sc(skill_id_);
+    struct status_change *tsc = status_get_sc(target);
+    struct status_change_entry *tsce = (tsc && type != SC_NONE) ? tsc->getSCE(type) : nullptr;
+
+    int duration = skill_get_time(skill_id_, skill_lv);
+
+    if (tsce) {
+        duration = status_change_end(target, type);
+    } else {
+        duration = sc_start(src, target, type, 100, skill_lv, skill_get_time(skill_id_, skill_lv));
+    }
+    clif_skill_nodamage(src, target, skill_id_, skill_lv, duration);
     return 0;
 }

@@ -82,5 +82,6 @@ void init_swordsman_skills(SkillRepository& repo) {
     repo.addSkill(e_skill::SM_PROVOKE, std::make_unique<Provoke>());
     repo.addSkill(e_skill::SM_MAGNUM, std::make_unique<MagnumBreak>());
     repo.addSkill(e_skill::SM_ENDURE, std::make_unique<StatusSkill>(e_skill::SM_ENDURE));
+    repo.addSkill(e_skill::SM_AUTOBERSERK, std::make_unique<ToggleSkill>(e_skill::SM_AUTOBERSERK));
 }
 

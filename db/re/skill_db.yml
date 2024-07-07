@@ -5377,6 +5377,7 @@ Body:
       IsQuest: true
     Hit: Single
     HitCount: 1
+    Duration1: 60000
     Requires:
       SpCost: 1
     Status: AutoBerserk
