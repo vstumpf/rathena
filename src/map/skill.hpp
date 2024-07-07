@@ -2813,4 +2813,7 @@ int skill_get_time3(struct map_data *mapdata, uint16 skill_id, uint16 skill_lv);
 #define SKILL_CHK_ABR(skill_id)   ( (skill_id) >= ABR_SKILLBASE && (skill_id) < ABR_SKILLBASE+MAX_ABRSKILL )
 #define SKILL_CHK_GUILD(skill_id) ( (skill_id) >= GD_SKILLBASE && (skill_id) < GD_SKILLBASE+MAX_GUILDSKILL )
 
+int skill_area_sub(struct block_list *bl, va_list ap);
+extern int skill_area_temp[8];
+
 #endif /* SKILL_HPP */

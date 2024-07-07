@@ -40,4 +40,11 @@ protected:
     virtual int castendDamageImpl(block_list *src, block_list *target, uint16 skill_lv, t_tick tick, int flag) const override;
 };
 
+class StatusSkill : public Skill {
+public:
+	explicit StatusSkill(e_skill skill_id) : Skill(skill_id) {};
+protected:
+	virtual int castendNoDamageImpl(block_list *src, block_list *target, uint16 skill_lv, t_tick tick, int flag) const override;
+};
+
 #endif // MAP_SKILL_HPP
