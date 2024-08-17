@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <unordered_map>
 
 #include <common/nullpo.hpp>
@@ -56,8 +57,12 @@ uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	bool exists = item != nullptr;
 
 	if (!exists) {
-		if (!this->nodesExist(node, { "AegisName", "Name" }))
+		if (!getCanCreate()) {
+			return 1;
+		}
+		if (!this->nodesExist(node, { "AegisName", "Name" })) {
 			return 0;
+		}
 
 		item = std::make_shared<item_data>();
 		item->nameid = nameid;
@@ -1107,6 +1112,43 @@ uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
 		if (!exists)
 			item->unequip_script = nullptr;
 	}
+
+#ifdef MAP_GENERATOR
+	if (this->nodeExists(node, "Identified")) {
+		const auto& clientNode = node["Identified"];
+		item_data::ClientDesc desc;
+		if (this->nodeExists(clientNode, "Display")) {
+			if (!this->asString(clientNode, "Display", desc.display))
+				return 0;
+		}
+		if (this->nodeExists(clientNode, "Resource")) {
+			if (!this->asString(clientNode, "Resource", desc.resource))
+				return 0;
+		}
+		if (this->nodeExists(clientNode, "Description")) {
+			if (!this->asString(clientNode, "Description", desc.description))
+				return 0;
+		}
+		item->identified = desc;
+	}
+	if (this->nodeExists(node, "Unidentified")) {
+		const auto& clientNode = node["Unidentified"];
+		item_data::ClientDesc desc;
+		if (this->nodeExists(clientNode, "Display")) {
+			if (!this->asString(clientNode, "Display", desc.display))
+				return 0;
+		}
+		if (this->nodeExists(clientNode, "Resource")) {
+			if (!this->asString(clientNode, "Resource", desc.resource))
+				return 0;
+		}
+		if (this->nodeExists(clientNode, "Description")) {
+			if (!this->asString(clientNode, "Description", desc.description))
+				return 0;
+		}
+		item->unidentified = desc;
+	}
+#endif
 
 	if (!exists)
 		this->put(nameid, item);
@@ -4794,6 +4836,82 @@ void itemdb_gen_itemmoveinfo()
 
 	auto currenttime = std::chrono::system_clock::now();
 	ShowInfo("itemdb_gen_itemmoveinfo: Done generating itemmoveinfov5.txt. The process took %lldms\n", std::chrono::duration_cast<std::chrono::milliseconds>(currenttime - starttime).count());
+}
+
+void itemdb_gen_iteminfo() {
+#ifdef MAP_GENERATOR
+	ShowInfo("itemdb_gen_iteminfo: Generating iteminfo.lua.\n");
+	auto starttime = std::chrono::system_clock::now();
+	auto os = std::ofstream("./generated/clientside/System/iteminfo.lua", std::ios::trunc);
+	std::map<t_itemid, std::shared_ptr<item_data>> sorted_itemdb(item_db.begin(), item_db.end());
+
+	os << "tbl = {\n";
+	for (auto it = sorted_itemdb.begin(); it != sorted_itemdb.end(); ++it) {
+		os << "  [" << it->first << "] = {\n";
+		os << "    unidentifiedDisplayName = \"" << it->second->unidentified.display << "\",\n";
+		os << "    unidentifiedResourceName = \"" << it->second->unidentified.resource << "\",\n";
+		os << "    unidentifiedDescriptionName = {\n";
+		std::stringstream ss(it->second->unidentified.description);
+		std::string line;
+		while (getline(ss, line, '\n')) {
+			os << "      \"" << line << "\",\n";
+		}
+		os << "	  },\n";
+		os << "    identifiedDisplayName = \"" << it->second->identified.display << "\",\n";
+		os << "    identifiedResourceName = \"" << it->second->identified.resource << "\",\n";
+		os << "    identifiedDescriptionName = {\n";
+		ss = std::stringstream(it->second->identified.description);
+		while (getline(ss, line, '\n')) {
+			os << "      \"" << line << "\",\n";
+		}
+		os << "	  },\n";
+		os << "    slotCount = " << it->second->slots << ",\n";
+		os << "    ClassNum = " << it->second->view_id << ",\n";
+		bool costume = (it->second->type == IT_ARMOR) && (it->second->equip & EQP_COSTUME);
+		os << "    costume = " << (costume ? "true" : "false") << ",\n";
+		os << "  },\n";
+	}
+	os << "}\n";
+	os << R"SCRIPT(
+function main()
+	for ItemID, DESC in pairs(tbl) do
+		result, msg = AddItem(ItemID, DESC.unidentifiedDisplayName, DESC.unidentifiedResourceName, DESC.identifiedDisplayName, DESC.identifiedResourceName, DESC.slotCount, DESC.ClassNum)
+		if not result == true then
+			return false, msg
+		end
+		for k, v in pairs(DESC.unidentifiedDescriptionName) do
+			result, msg = AddItemUnidentifiedDesc(ItemID, v)
+			if not result == true then
+				return false, msg
+			end
+		end
+		for k, v in pairs(DESC.identifiedDescriptionName) do
+			result, msg = AddItemIdentifiedDesc(ItemID, v)
+			if not result == true then
+				return false, msg
+			end
+		end
+		if nil ~= DESC.EffectID then
+			result, msg = AddItemEffectInfo(ItemID, DESC.EffectID)
+		end
+		if not result == true then
+			return false, msg
+		end
+		if nil ~= DESC.costume then
+			result, msg = AddItemIsCostume(ItemID, DESC.costume)
+		end
+		if not result == true then
+			return false, msg
+		end
+	end
+	return true, "good"
+end
+)SCRIPT";
+	os.close();
+
+	auto currenttime = std::chrono::system_clock::now();
+	ShowInfo("itemdb_gen_iteminfo: Done generating iteminfo.lua. The process took %lldms\n", std::chrono::duration_cast<std::chrono::milliseconds>(currenttime - starttime).count());
+#endif
 }
 
 /**

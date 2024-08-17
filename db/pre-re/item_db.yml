@@ -93,3 +93,5 @@ Footer:
   - Path: db/pre-re/item_db_usable.yml
   - Path: db/pre-re/item_db_equip.yml
   - Path: db/pre-re/item_db_etc.yml
+  - Path: db/pre-re/generator/item_desc.yml
+    Generator: true

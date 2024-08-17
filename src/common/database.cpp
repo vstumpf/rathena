@@ -72,6 +72,18 @@ bool YamlDatabase::verifyCompatibility( const ryml::Tree& tree ){
 		}
 	}
 
+	if (this->nodeExists(headerNode, "CanCreate")) {
+		bool canCreate;
+
+		if (!this->asBool(headerNode, "CanCreate", canCreate)) {
+			return false;
+		}
+
+		this->setCanCreate(canCreate);
+	} else {
+		setCanCreate(true);
+	}
+
 	return true;
 }
 
@@ -381,6 +393,14 @@ std::string YamlDatabase::getCurrentFile(){
 
 void YamlDatabase::setGenerator(bool shouldLoad) {
 	shouldLoadGenerator = shouldLoad;
+}
+
+void YamlDatabase::setCanCreate(bool canCreate) {
+	canCreate_ = canCreate;
+}
+
+bool YamlDatabase::getCanCreate() {
+	return canCreate_;
 }
 
 void on_yaml_error( const char* msg, size_t len, ryml::Location loc, void *user_data ){

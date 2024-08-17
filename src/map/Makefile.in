@@ -58,6 +58,7 @@ tools: $(TOOLS_DEPENDS)
 clean:
 	@echo "	CLEAN	map"
 	@rm -rf *.o obj ../../@OMAP@@EXEEXT@
+	@rm -rf *.o obj-gen ../../map-server-generator@EXEEXT@
 
 help:
 	@echo "possible targets are 'server' 'all' 'clean' 'help'"

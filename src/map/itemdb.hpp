@@ -3133,6 +3133,14 @@ struct item_data
 
 	bool isStackable();
 	int inventorySlotNeeded(int quantity);
+#ifdef MAP_GENERATOR
+	struct ClientDesc {
+		std::string display;
+		std::string resource;
+		std::string description;
+	};
+	ClientDesc identified, unidentified;
+#endif
 };
 
 class ItemDatabase : public TypesafeCachedYamlDatabase<t_itemid, item_data> {
@@ -3153,7 +3161,9 @@ private:
 
 public:
 	ItemDatabase() : TypesafeCachedYamlDatabase("ITEM_DB", 3, 1) {
-
+#ifdef MAP_GENERATOR
+	setGenerator(true);
+#endif
 	}
 
 	const std::string getDefaultLocation() override;
@@ -3443,6 +3453,7 @@ bool itemdb_isNoEquip(struct item_data *id, uint16 m);
 bool itemdb_parse_roulette_db(void);
 
 void itemdb_gen_itemmoveinfo();
+void itemdb_gen_iteminfo();
 
 void itemdb_reload(void);
 
