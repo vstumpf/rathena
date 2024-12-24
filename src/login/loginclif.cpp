@@ -226,8 +226,8 @@ static void logclif_auth_failed(struct login_session_data* sd, int32 result) {
 	if( result == 6 ){
 		char unblock_time[20];
 		struct mmo_account acc;
-		AccountDB* accounts = login_get_accounts_db();
-		time_t unban_time = ( accounts->load_str( accounts, &acc, sd->userid ) ) ? acc.unban_time : 0;
+		AccountDb* accountDb = getAccountDb();
+		time_t unban_time = (accountDb->loadFromUsername(acc, sd->userid)) ? acc.unban_time : 0;
 		timestamp2string( unblock_time, sizeof( unblock_time ), unban_time, login_config.date_format );
 
 		logclif_auth_failed( fd, result, unblock_time );

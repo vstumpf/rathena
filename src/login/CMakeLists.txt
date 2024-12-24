@@ -1,7 +1,7 @@
 add_executable(login-server)
 
 target_sources(login-server PRIVATE
-	"account.cpp"
+	# "account.cpp"
 	"ipban.cpp"
 	"login.cpp"
 	"loginchrif.cpp"
@@ -12,7 +12,7 @@ target_sources(login-server PRIVATE
 
 if(WIN32)
 	target_sources(login-server PRIVATE
-		"account.hpp"
+		# "account.hpp"
 		"ipban.hpp"
 		"loginchrif.hpp"
 		"loginclif.hpp"
@@ -26,4 +26,7 @@ endif()
 
 target_link_libraries(login-server PUBLIC
 	common
+	accountdb
 )
+
+add_subdirectory(accountdb)
