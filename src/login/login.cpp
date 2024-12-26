@@ -422,6 +422,7 @@ int32 login_mmo_auth(struct login_session_data* sd, bool isServer) {
 
 
 	if( login_config.use_web_auth_token ){
+		getAccountDb()->refreshWebToken(acc);
 		safestrncpy( sd->web_auth_token, acc.web_auth_token, WEB_AUTH_TOKEN_LENGTH );
 	}
 
