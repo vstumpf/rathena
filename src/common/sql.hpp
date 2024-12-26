@@ -123,7 +123,8 @@ int32 Sql_Ping(Sql* self);
 /// @return The size of the escaped string
 size_t Sql_EscapeString(Sql* self, char* out_to, const char* from);
 
-
+// Escape a string, returning a std::string
+std::string Sql_GetEscapeString(Sql* self, std::string_view from);
 
 /// Escapes a string.
 /// The output buffer must be at least from_len*2+1 in size.

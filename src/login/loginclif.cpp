@@ -16,7 +16,6 @@
 #include <common/timer.hpp> //difftick
 #include <common/utils.hpp>
 
-#include "account.hpp"
 #include "ipban.hpp" //ipban_check
 #include "login.hpp"
 #include "loginchrif.hpp"
@@ -225,7 +224,7 @@ static void logclif_auth_failed(struct login_session_data* sd, int32 result) {
 	// 6 = You are prohibited to log in until %s
 	if( result == 6 ){
 		char unblock_time[20];
-		struct mmo_account acc;
+		MmoAccount acc;
 		AccountDb* accountDb = getAccountDb();
 		time_t unban_time = (accountDb->loadFromUsername(acc, sd->userid)) ? acc.unban_time : 0;
 		timestamp2string( unblock_time, sizeof( unblock_time ), unban_time, login_config.date_format );

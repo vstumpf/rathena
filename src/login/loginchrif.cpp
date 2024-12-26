@@ -11,7 +11,6 @@
 #include <common/strlib.hpp> //safeprint
 #include <common/timer.hpp> //difftick
 
-#include "account.hpp"
 #include "login.hpp"
 #include "loginlog.hpp"
 
@@ -151,7 +150,7 @@ int32 logchrif_parse_ackusercount(int32 fd, int32 id){
  * @return -1 : account not found, 1:sucess
  */
 int32 logchrif_send_accdata(int32 fd, uint32 aid) {
-	struct mmo_account acc;
+	MmoAccount acc;
 	time_t expiration_time = 0;
 	char email[40] = "";
 	int32 group_id = 0;
@@ -269,7 +268,7 @@ int32 logchrif_parse_reqchangemail(int32 fd, int32 id, char* ip){
 	if (RFIFOREST(fd) < 86)
 		return 0;
 	else{
-		struct mmo_account acc;
+		MmoAccount acc;
 		AccountDb* accountDb = getAccountDb();
 		char actual_email[40];
 		char new_email[40];
@@ -293,7 +292,7 @@ int32 logchrif_parse_reqchangemail(int32 fd, int32 id, char* ip){
 			safestrncpy(acc.email, new_email, 40);
 			ShowNotice("Char-server '%s': Modify an e-mail on an account (@email GM command) (account: %d (%s), new e-mail: %s, ip: %s).\n", ch_server[id].name, account_id, acc.userid, new_email, ip);
 			// Save
-			accountDb->save(acc, false);
+			accountDb->save(acc);
 		}
 	}
 	return 1;
@@ -311,7 +310,7 @@ int32 logchrif_parse_requpdaccstate(int32 fd, int32 id, char* ip){
 	if (RFIFOREST(fd) < 10)
 		return 0;
 	else{
-		struct mmo_account acc;
+		MmoAccount acc;
 
 		uint32 account_id = RFIFOL(fd,2);
 		uint32 state = RFIFOL(fd,6);
@@ -328,7 +327,7 @@ int32 logchrif_parse_requpdaccstate(int32 fd, int32 id, char* ip){
 
 			acc.state = state;
 			// Save
-			accountDb->save(acc, false);
+			accountDb->save(acc);
 
 			// notify other servers
 			if (state != 0){
@@ -356,7 +355,7 @@ int32 logchrif_parse_reqbanacc(int32 fd, int32 id, char* ip){
 	if (RFIFOREST(fd) < 10)
 		return 0;
 	else{
-		struct mmo_account acc;
+		MmoAccount acc;
 		AccountDb* accountDb = getAccountDb();
 
 		uint32 account_id = RFIFOL(fd,2);
@@ -385,7 +384,7 @@ int32 logchrif_parse_reqbanacc(int32 fd, int32 id, char* ip){
 				acc.unban_time = timestamp;
 
 				// Save
-				accountDb->save(acc, false);
+				accountDb->save(acc);
 
 				WBUFW(buf,0) = 0x2731;
 				WBUFL(buf,2) = account_id;
@@ -409,7 +408,7 @@ int32 logchrif_parse_reqchgsex(int32 fd, int32 id, char* ip){
 	if( RFIFOREST(fd) < 6 )
 		return 0;
 	else{
-		struct mmo_account acc;
+		MmoAccount acc;
 		AccountDb* accountDb = getAccountDb();
 
 		uint32 account_id = RFIFOL(fd,2);
@@ -427,7 +426,7 @@ int32 logchrif_parse_reqchgsex(int32 fd, int32 id, char* ip){
 
 			acc.sex = sex;
 			// Save
-			accountDb->save(acc, false);
+			accountDb->save(acc);
 
 			// announce to other servers
 			WBUFW(buf,0) = 0x2723;
@@ -449,17 +448,50 @@ int32 logchrif_parse_reqchgsex(int32 fd, int32 id, char* ip){
 int32 logchrif_parse_upd_global_accreg(int32 fd, int32 id, char* ip){
 	if( RFIFOREST(fd) < 4 || RFIFOREST(fd) < RFIFOW(fd,2) )
 		return 0;
-	else{
-		struct mmo_account acc;
-		AccountDb* accountDb = getAccountDb();
-		uint32 account_id = RFIFOL(fd,4);
+	MmoAccount acc;
+	AccountDb* accountDb = getAccountDb();
+	uint32 account_id = RFIFOL(fd,4);
 
-		if( !accountDb->loadFromAccountId(acc, account_id) )
-			ShowStatus("Char-server '%s': receiving (from the char-server) of account_reg2 (account: %d not found, ip: %s).\n", ch_server[id].name, account_id, ip);
-		else
-			accountDb->saveGlobalAccReg(fd, account_id, RFIFOL(fd, 8));
-		RFIFOSKIP(fd,RFIFOW(fd,2));
+	if (!accountDb->loadFromAccountId(acc, account_id)) {
+		ShowStatus("Char-server '%s': receiving (from the char-server) of account_reg2 (account: %d not found, ip: %s).\n", ch_server[id].name, account_id, ip);
+		RFIFOSKIP(fd, RFIFOW(fd,2));
+		return 1;
 	}
+	uint16 count = RFIFOW(fd, 12);
+	if (count) {
+		int32 cursor = 14;
+		for (int i = 0; i < count; i++) {
+			uint8 len_val = RFIFOB(fd, cursor);
+			std::string_view key(RFIFOCP(fd, cursor + 1), len_val);
+			cursor += len_val + 1;
+			uint32 index = RFIFOL(fd, cursor);
+			cursor += 4;
+			switch (RFIFOB(fd, cursor++)) {
+				case 0:
+					accountDb->saveGlobalAccRegNum(account_id, key, index, RFIFOQ(fd, cursor));
+					cursor += 8;
+					break;
+				case 1:
+					accountDb->deleteGlobalAccRegNum(account_id, key, index);
+					break;
+				case 2:
+				{
+					uint8 len_val = RFIFOB(fd, cursor);
+					std::string_view sval(RFIFOCP(fd, cursor + 1), len_val);
+					cursor += len_val + 1;
+					accountDb->saveGlobalAccRegStr(account_id, key, index, sval);
+					break;
+				}
+				case 3:
+					accountDb->deleteGlobalAccRegStr(account_id, key, index);
+					break;
+				default:
+					ShowError("logchrif_parse_upd_global_accreg: unknown type %d\n", RFIFOB(fd, cursor - 1));
+					return 1;
+			}
+		}
+	}
+	RFIFOSKIP(fd,RFIFOW(fd,2));
 	return 1;
 }
 
@@ -474,7 +506,7 @@ int32 logchrif_parse_requnbanacc(int32 fd, int32 id, char* ip){
 	if( RFIFOREST(fd) < 6 )
 		return 0;
 	else{
-		struct mmo_account acc;
+		MmoAccount acc;
 		AccountDb* accountDb = getAccountDb();
 
 		uint32 account_id = RFIFOL(fd,2);
@@ -487,7 +519,7 @@ int32 logchrif_parse_requnbanacc(int32 fd, int32 id, char* ip){
 		else{
 			ShowNotice("Char-server '%s': UnBan request (account: %d, ip: %s).\n", ch_server[id].name, account_id, ip);
 			acc.unban_time = 0;
-			accountDb->save(acc, false);
+			accountDb->save(acc);
 		}
 	}
 	return 1;
@@ -554,14 +586,104 @@ int32 logchrif_parse_updonlinedb(int32 fd, int32 id){
 int32 logchrif_parse_req_global_accreg(int32 fd){
 	if (RFIFOREST(fd) < 10)
 		return 0;
-	else{
-		AccountDb* accountDb = getAccountDb();
-		uint32 account_id = RFIFOL(fd,2);
-		uint32 char_id = RFIFOL(fd,6);
-		RFIFOSKIP(fd,10);
 
-		accountDb->sendGlobalAccReg(fd,account_id,char_id);
+	AccountDb* accountDb = getAccountDb();
+	uint32 account_id = RFIFOL(fd,2);
+	uint32 char_id = RFIFOL(fd,6);
+	size_t plen = 16;
+	RFIFOSKIP(fd,10);
+
+	auto regs = accountDb->loadGlobalAccRegStr(account_id);
+	WFIFOHEAD(fd, 60000 + 300);
+	WFIFOW(fd,0) = 0x2726;
+	WFIFOL(fd, 4) = account_id;
+	WFIFOL(fd, 8) = char_id;
+	WFIFOB(fd, 12) = 0;
+	WFIFOB(fd, 13) = 1;
+	WFIFOW(fd, 14) = 0;
+	plen = 16;
+	/**
+	 * Vessel!
+	 *
+	 * str type
+	 * { keyLength(B), key(<keyLength>), index(L), valLength(B), val(<valLength>) }
+	 **/
+	for (const auto& reg : regs) {
+		WFIFOB(fd, plen) = static_cast<unsigned char>(reg.key.length() + 1);
+		plen += 1;
+		memcpy(WFIFOP(fd, plen), reg.key.c_str(), reg.key.length() + 1);
+		plen += reg.key.length() + 1;
+		WFIFOL(fd, plen) = reg.index;
+		plen += 4;
+		WFIFOB(fd, plen) = static_cast<unsigned char>(reg.value.length() + 1);
+		plen += 1;
+		memcpy(WFIFOP(fd, plen), reg.value.c_str(), reg.value.length() + 1);
+		plen += reg.value.length() + 1;
+		WFIFOW(fd, 14) += 1;
+
+		if (plen > 60000) {
+			WFIFOW(fd, 2) = plen;
+			WFIFOSET(fd, plen);
+
+			WFIFOHEAD(fd, 60000 + 300);
+			WFIFOW(fd,0) = 0x2726;
+			WFIFOL(fd, 4) = account_id;
+			WFIFOL(fd, 8) = char_id;
+			WFIFOB(fd, 12) = 0;
+			WFIFOB(fd, 13) = 1;
+			WFIFOW(fd, 14) = 0;
+			plen = 16;
+		}
 	}
+
+	WFIFOW(fd, 2) = plen;
+	WFIFOSET(fd, plen);
+
+	auto numregs = accountDb->loadGlobalAccRegNum(account_id);
+	WFIFOHEAD(fd, 60000 + 300);
+	WFIFOW(fd,0) = 0x2726;
+	WFIFOL(fd, 4) = account_id;
+	WFIFOL(fd, 8) = char_id;
+	WFIFOB(fd, 12) = 0;
+	WFIFOB(fd, 13) = 0;
+	WFIFOW(fd, 14) = 0;
+	plen = 16;
+
+	/**
+	 * Vessel!
+	 *
+	 * int32 type
+	 * { keyLength(B), key(<keyLength>), index(L), value(L) }
+	 **/
+	for (const auto& reg : numregs) {
+		WFIFOB(fd, plen) = static_cast<unsigned char>(reg.key.length() + 1);
+		plen += 1;
+		memcpy(WFIFOP(fd, plen), reg.key.c_str(), reg.key.length() + 1);
+		plen += reg.key.length() + 1;
+		WFIFOL(fd, plen) = reg.index;
+		plen += 4;
+		WFIFOQ(fd, plen) = reg.value;
+		plen += 8;
+		WFIFOW(fd, 14) += 1;
+
+		if (plen > 60000) {
+			WFIFOW(fd, 2) = plen;
+			WFIFOSET(fd, plen);
+
+			WFIFOHEAD(fd, 60000 + 300);
+			WFIFOW(fd,0) = 0x2726;
+			WFIFOL(fd, 4) = account_id;
+			WFIFOL(fd, 8) = char_id;
+			WFIFOB(fd, 12) = 0;
+			WFIFOB(fd, 13) = 0;
+			WFIFOW(fd, 14) = 0;
+			plen = 16;
+		}
+	}
+
+	WFIFOB(fd, 12) = 1;
+	WFIFOW(fd, 2) = plen;
+	WFIFOSET(fd, plen);
 	return 1;
 }
 
@@ -603,13 +725,13 @@ int32 logchrif_parse_updpincode(int32 fd){
 	if( RFIFOREST(fd) < 8 + PINCODE_LENGTH+1 )
 		return 0;
 	else{
-		struct mmo_account acc;
+		MmoAccount acc;
 		AccountDb* accountDb = getAccountDb();
 
 		if( accountDb->loadFromAccountId(acc, RFIFOL(fd,4) ) ){
 			strncpy( acc.pincode, RFIFOCP(fd,8), PINCODE_LENGTH+1 );
 			acc.pincode_change = time( nullptr );
-			accountDb->save(acc, false);
+			accountDb->save(acc);
 		}
 		RFIFOSKIP(fd,8 + PINCODE_LENGTH+1);
 	}
@@ -625,7 +747,7 @@ int32 logchrif_parse_pincode_authfail(int32 fd){
 	if( RFIFOREST(fd) < 6 )
 		return 0;
 	else{
-		struct mmo_account acc;
+		MmoAccount acc;
 		AccountDb* accountDb = getAccountDb();
 		if( accountDb->loadFromAccountId(acc, RFIFOL(fd,2) ) ){
 			struct online_login_data* ld = login_get_online_user( acc.account_id );
@@ -657,7 +779,7 @@ int32 logchrif_parse_reqvipdata(int32 fd) {
 	if( RFIFOREST(fd) < 15 )
 		return 0;
 	else { //request vip info
-		struct mmo_account acc;
+		MmoAccount acc;
 		AccountDb* accountDb = getAccountDb();
 		int32 aid = RFIFOL(fd,2);
 		int8 flag = RFIFOB(fd,6);
@@ -722,7 +844,7 @@ int32 logchrif_parse_accinfo(int32 fd) {
 		int32 map_fd = RFIFOL(fd, 2), u_fd = RFIFOL(fd, 6), u_aid = RFIFOL(fd, 10), account_id = RFIFOL(fd, 14);
 		int8 type = RFIFOB(fd, 18);
 		AccountDb* accountDb = getAccountDb();
-		struct mmo_account acc;
+		MmoAccount acc;
 		RFIFOSKIP(fd,19);
 
 		// Send back the result to char-server

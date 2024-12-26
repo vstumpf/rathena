@@ -9,3 +9,14 @@ std::uniform_int_distribution<int32> int31_distribution = std::uniform_int_distr
 int32 rnd( void ){
 	return int31_distribution( generator );
 }
+
+constexpr std::string_view alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+std::string rnd_string(size_t length) {
+	std::string str;
+	str.reserve(length);
+	for (size_t i = 0; i < length; ++i) {
+		str.push_back(static_cast<char>(rnd_value<int>(0, alphabet.length() - 1)));
+	}
+	return str;
+}

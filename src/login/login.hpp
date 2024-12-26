@@ -12,14 +12,16 @@
 #include <common/timer.hpp>
 #include <config/core.hpp>
 
-#include "account.hpp"
-
 #include "accountdb/accountdb.hpp"
 
 using rathena::server_core::Core;
 using rathena::server_core::e_core_type;
 
+struct Login_Config;
+extern struct Login_Config login_config;
+
 namespace rathena::server_login {
+	
 class LoginServer : public Core {
 protected:
 	bool initialize(int32 argc, char* argv[]) override;
@@ -31,6 +33,10 @@ public:
 
 	AccountDb* getAccountDb () {
 		return accountDb_.get();
+	}
+
+	const Login_Config& getLoginConfig() const {
+		return login_config;
 	}
 
 private:
@@ -131,7 +137,6 @@ struct Login_Config {
 	bool use_web_auth_token;						/// Enable web authentication token system
 	int32 disable_webtoken_delay;						/// delay disabling web token after char logs off in milliseconds
 };
-extern struct Login_Config login_config;
 
 #define sex_num2str(num) ( (num ==  SEX_FEMALE  ) ? 'F' : (num ==  SEX_MALE  ) ? 'M' : 'S' )
 #define sex_str2num(str) ( (str == 'F' ) ?  SEX_FEMALE  : (str == 'M' ) ?  SEX_MALE  :  SEX_SERVER  )

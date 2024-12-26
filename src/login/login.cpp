@@ -24,7 +24,6 @@
 #include <common/utils.hpp>
 #include <config/core.hpp>
 
-#include "account.hpp"
 #include "ipban.hpp"
 #include "loginchrif.hpp"
 #include "loginclif.hpp"
@@ -55,12 +54,15 @@ int32 subnet_count = 0; //number of subnet config
 int32 login_fd; // login server file descriptor socket
 
 //early declaration
-bool login_check_password( struct login_session_data& sd, struct mmo_account& acc );
+bool login_check_password( struct login_session_data& sd, MmoAccount& acc );
 
 AccountDb* getAccountDb() {
 	return static_cast<LoginServer*>(global_core)->getAccountDb();
 }
 
+const Login_Config& getLoginConfig() {
+	return static_cast<LoginServer*>(global_core)->getLoginConfig();
+}
 
 // Console Command Parser [Wizputer]
 //FIXME to be remove (moved to cnslif / will be done once map/char/login, all have their cnslif interface ready)
@@ -221,7 +223,7 @@ int32 login_mmo_auth_new(const char* userid, const char* pass, const char sex, c
 	static int32 num_regs = 0; // registration counter
 	static t_tick new_reg_tick = 0;
 	t_tick tick = gettick();
-	struct mmo_account acc;
+	MmoAccount acc{};
 
 	//Account Registration Flood Protection by [Kevin]
 	if( new_reg_tick == 0 )
@@ -243,8 +245,7 @@ int32 login_mmo_auth_new(const char* userid, const char* pass, const char sex, c
 		ShowNotice("Attempt of creation of an already existant account (account: %s, sex: %c)\n", userid, sex);
 		return 1; // 1 = Incorrect Password
 	}
-
-	memset(&acc, '\0', sizeof(acc));
+	
 	acc.account_id = -1; // assigned by account db
 	safestrncpy(acc.userid, userid, sizeof(acc.userid));
 	safestrncpy(acc.pass, pass, sizeof(acc.pass));
@@ -290,7 +291,7 @@ int32 login_mmo_auth_new(const char* userid, const char* pass, const char sex, c
  *	x: acc state (TODO document me deeper)
  */
 int32 login_mmo_auth(struct login_session_data* sd, bool isServer) {
-	struct mmo_account acc;
+	MmoAccount acc;
 
 	char ip[16];
 	ip2str(session[sd->fd]->client_addr, ip);
@@ -417,7 +418,8 @@ int32 login_mmo_auth(struct login_session_data* sd, bool isServer) {
 	safestrncpy(acc.last_ip, ip, sizeof(acc.last_ip));
 	acc.unban_time = 0;
 	acc.logincount++;
-	getAccountDb()->save(acc, true);
+	getAccountDb()->save(acc);
+
 
 	if( login_config.use_web_auth_token ){
 		safestrncpy( sd->web_auth_token, acc.web_auth_token, WEB_AUTH_TOKEN_LENGTH );
@@ -437,7 +439,7 @@ int32 login_mmo_auth(struct login_session_data* sd, bool isServer) {
  * @param refpass: pass register in db
  * @return true if matching else false
  */
-bool login_check_password( struct login_session_data& sd, struct mmo_account& acc ){
+bool login_check_password( struct login_session_data& sd, MmoAccount& acc ){
 	if( sd.passwdenc == 0 ){
 		return 0 == strcmp( sd.passwd, acc.pass );
 	}
@@ -662,8 +664,6 @@ bool login_config_read(const char* cfgName, bool normal) {
 			login_config.client_hash_check = config_switch(w2);
 		else if(!strcmpi(w1, "use_web_auth_token"))
 			login_config.use_web_auth_token = config_switch(w2);
-		else if (!strcmpi(w1, "disable_webtoken_delay"))
-			login_config.disable_webtoken_delay = cap_value(atoi(w2), 0, INT_MAX);
 		else if(!strcmpi(w1, "client_hash")) {
 			int32 group = 0;
 			char md5[33];
@@ -843,9 +843,6 @@ bool LoginServer::initialize( int32 argc, char* argv[] ){
 	// Init default value
 	safestrncpy(console_log_filepath, "./log/login-msg_log.log", sizeof(console_log_filepath));
 
-	// initialize engine
-	accountDb_ = std::make_shared<AccountDbSql>();
-
 	// read login-server configuration
 	login_set_defaults();
 	cli_get_options(argc,argv);
@@ -854,6 +851,10 @@ bool LoginServer::initialize( int32 argc, char* argv[] ){
 	msg_config_read(LOGIN_MSG_CONF_NAME);
 	login_lan_config_read(LAN_CONF_NAME);
 	//end config
+
+	// initialize engine
+	accountDb_ = std::make_shared<AccountDbSql>();
+	accountDb_->init();
 
 	do_init_loginclif();
 	do_init_loginchrif();

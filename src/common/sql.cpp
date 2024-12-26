@@ -229,6 +229,14 @@ size_t Sql_EscapeString(Sql* self, char *out_to, const char *from)
 		return (size_t)mysql_escape_string(out_to, from, (unsigned long)strlen(from));
 }
 
+std::string Sql_GetEscapeString(Sql* self, std::string_view from) {
+	std::string out;
+	size_t from_len = from.length();
+	out.resize(from_len * 2 + 1);
+	size_t len = Sql_EscapeStringLen(self, out.data(), from.data(), from_len);
+	out.resize(len);
+	return out;
+}
 
 
 /// Escapes a string.

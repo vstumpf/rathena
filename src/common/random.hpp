@@ -48,4 +48,6 @@ typename std::enable_if<std::is_integral<T>::value, bool>::type rnd_chance_offic
 	return rnd_value<T>(0, 20000)%base < chance;
 }
 
+std::string rnd_string(size_t length);
+
 #endif /* RANDOM_HPP */
