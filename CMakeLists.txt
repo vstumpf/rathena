@@ -107,5 +107,5 @@ add_custom_target(server
 
 if(ENABLE_TESTS)
 	enable_testing()
-	add_subdirectory(test)
+	add_subdirectory(tests)
 endif()

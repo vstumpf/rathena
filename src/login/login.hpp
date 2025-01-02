@@ -207,6 +207,7 @@ void login_remove_auth_node( uint32 account_id );
  * @return :0
  */
 TIMER_FUNC(login_waiting_disconnect_timer);
+TIMER_FUNC(login_disable_webtoken_timer);
 
 void login_online_db_setoffline( int32 char_server );
 

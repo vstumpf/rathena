@@ -122,6 +122,7 @@ void login_remove_online_user(uint32 account_id) {
 		delete_timer( p->waiting_disconnect, login_waiting_disconnect_timer );
 	}
 
+	add_timer(gettick() + login_config.disable_webtoken_delay, login_disable_webtoken_timer, account_id, 0);
 	getAccountDb()->disableWebToken(account_id);
 
 	online_db.erase( account_id );
@@ -170,6 +171,22 @@ TIMER_FUNC(login_waiting_disconnect_timer){
 
 	return 0;
 }
+
+/**
+ * Timered function to remove a user's webtoken.
+ * @param tid: timer id
+ * @param tick: tick of execution
+ * @param id: user account id
+ * @param data: unused
+ * @return :0
+ */
+TIMER_FUNC(login_disable_webtoken_timer) {
+	if (!getAccountDb()->disableWebToken(id)) {
+		ShowError("Failed to disable web token for account %d\n", id);
+	}
+	return 0;
+}
+
 
 void login_online_db_setoffline( int32 char_server ){
 	for( std::pair<uint32,struct online_login_data> pair : online_db ){
@@ -421,7 +438,7 @@ int32 login_mmo_auth(struct login_session_data* sd, bool isServer) {
 	getAccountDb()->save(acc);
 
 
-	if( login_config.use_web_auth_token ){
+	if(acc.sex != 'S' && login_config.use_web_auth_token ){
 		getAccountDb()->refreshWebToken(acc);
 		safestrncpy( sd->web_auth_token, acc.web_auth_token, WEB_AUTH_TOKEN_LENGTH );
 	}
@@ -838,6 +855,7 @@ void LoginServer::handle_shutdown(){
 	// TODO proper shutdown procedure; kick all characters, wait for acks, ...  [FlavioJS]
 	do_shutdown_loginchrif();
 	flush_fifos();
+	accountDb_.reset();
 }
 
 bool LoginServer::initialize( int32 argc, char* argv[] ){
@@ -848,14 +866,15 @@ bool LoginServer::initialize( int32 argc, char* argv[] ){
 	login_set_defaults();
 	cli_get_options(argc,argv);
 
+	// initialize engine
+	// TODO: Use a factory to determine which AccountDb implementation to use
+	accountDb_ = std::make_shared<AccountDbSql>();
+
 	login_config_read(LOGIN_CONF_NAME, true);
 	msg_config_read(LOGIN_MSG_CONF_NAME);
 	login_lan_config_read(LAN_CONF_NAME);
 	//end config
 
-	// initialize engine
-	accountDb_ = std::make_shared<AccountDbSql>();
-	accountDb_->init();
 
 	do_init_loginclif();
 	do_init_loginchrif();
@@ -868,6 +887,7 @@ bool LoginServer::initialize( int32 argc, char* argv[] ){
 	ipban_init();
 
 	add_timer_func_list(login_waiting_disconnect_timer, "waiting_disconnect_timer");
+	add_timer_func_list(login_disable_webtoken_timer, "remove_webtoken_timer");
 
 	// set default parser as parse_login function
 	set_defaultparse(logclif_parse);
@@ -899,8 +919,4 @@ bool LoginServer::initialize( int32 argc, char* argv[] ){
 	login_log(0, "login server", 100, "login server started");
 
 	return true;
-}
-
-int32 main( int32 argc, char *argv[] ){
-	return main_core<LoginServer>( argc, argv );
 }
