@@ -27,7 +27,7 @@ target_link_libraries(login PUBLIC
 	accountdb
 )
 
-add_executable(login-server "LoginServer.cpp")
+add_executable(login-server "LoginServerMain.cpp")
 target_link_libraries(login-server PRIVATE login)
 
 add_subdirectory(accountdb)
